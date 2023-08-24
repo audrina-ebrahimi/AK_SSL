@@ -20,6 +20,7 @@ class Trainer:
         feature_size: int,
         dataset_dir: str,
         dataset: torch.utils.data.Dataset,
+        image_size: int,
         save_dir: str,
         checkpoint_interval: int,
         reload_checkpoint: bool,
@@ -41,6 +42,7 @@ class Trainer:
 
         self.method = method
         self.dataset = dataset
+        self.image_size = image_size
         self.backbone = backbone
         self.feature_size = feature_size
         self.dataset_dir = dataset_dir
@@ -82,7 +84,7 @@ class Trainer:
             case "SimCLR":
                 self.model = SimCLR(self.backbone, self.feature_size, **kwargs)
                 self.loss = NT_Xent(**kwargs)
-                self.transformation = SimCLRViewTransform
+                self.transformation = SimCLRViewTransform(image_size=self.image_size, **kwargs)
                 print("Method: SimCLR")
                 print(f"Projection Dimension: {self.model.projection_dim}")
                 print(
