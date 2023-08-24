@@ -1,6 +1,15 @@
 import os
 import torch
 from torch import nn
+from tqdm.auto import tqdm
+from datetime import datetime
+
+from torch.utils.tensorboard import SummaryWriter
+
+
+from models.simclr import SimCLR
+from models.modules.losses.nt_xent import NT_Xent
+from models.modules.transformations.simclr import SimCLRViewTransform
 
 
 class Trainer:
@@ -8,11 +17,13 @@ class Trainer:
         self,
         method: str,
         backbone: nn.Module,
+        feature_size: int,
         dataset_dir: str,
         dataset: torch.utils.data.Dataset,
         save_dir: str,
         checkpoint_interval: int,
         reload_checkpoint: bool,
+        **kwargs,
     ):
         """
         Description:
@@ -26,12 +37,12 @@ class Trainer:
             save_dir (str): Path to the directory where the model will be saved.
             checkpoint_interval (int): Interval to save the model.
             reload_checkpoint (bool): If True, the model will be loaded from the last checkpoint.
-
         """
 
         self.method = method
         self.dataset = dataset
         self.backbone = backbone
+        self.feature_size = feature_size
         self.dataset_dir = dataset_dir
         self.reload_checkpoint = reload_checkpoint
         self.checkpoint_interval = checkpoint_interval
@@ -44,12 +55,17 @@ class Trainer:
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.checkpoint_path = self.save_dir + "Pretext/"
+
+        if not os.path.exists(self.checkpoint_path):
+            os.makedirs(self.checkpoint_path)
+
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.num_workers = os.cpu_count()
 
         print("----------------AK_SSL----------------")
         print("Number of workers:", self.num_workers)
-        print("Device:", device)
+        print("Device:", self.device)
         print("--------------------------------------")
 
         match self.method:
@@ -64,7 +80,20 @@ class Trainer:
             case "Rotation":
                 pass
             case "SimCLR":
-                pass
+                self.model = SimCLR(self.backbone, self.feature_size, **kwargs)
+                self.loss = NT_Xent(**kwargs)
+                self.transformation = SimCLRViewTransform
+                print("Method: SimCLR")
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(
+                    f"Projection number of layers: {self.model.projection_num_layers}"
+                )
+                print(
+                    f"Projection batch normalization: {self.model.projection_batch_norm}"
+                )
+                print("Loss: NT_Xent Loss")
+                print("Transformation: SimCLRViewTransform")
+                print("--------------------------------------")
             case "SimSiam":
                 pass
             case "SwAV":
@@ -74,16 +103,21 @@ class Trainer:
             case _:
                 raise Exception("Method not found.")
 
+        self.model = self.model.to(self.device)
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
+
     def get_backbone(self):
         return self.model.backbone
 
     def train(
-        batch_size: int,
-        start_epoch: int,
-        epochs: int,
-        optimizer: str,
-        weight_decay: float,
-        learning_rate: float,
+        self,
+        batch_size: int = 256,
+        start_epoch: int = 1,
+        epochs: int = 100,
+        optimizer: str = "Adam",
+        weight_decay: float = 1e-6,
+        learning_rate: float = 1e-3,
     ):
         """
         Description:
@@ -99,9 +133,60 @@ class Trainer:
         """
         match optimizer:
             case "Adam":
-                optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+                optimizer = torch.optim.Adam(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
             case "SGD":
-                optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+                optimizer = torch.optim.SGD(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+
+        train_loader = torch.utils.data.DataLoader(
+            self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
+        )
+
+        self.model.train(True)
+
+        for epoch in tqdm(
+            range(start_epoch - 1, epochs),
+            unit="epoch",
+            desc="Pretext Task Model Training",
+            leave=True,
+        ):
+            with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                tepoch.set_description(f"Epoch {epoch + 1}")
+                loss_hist_train = 0.0
+
+                for images, _ in tepoch:
+                    images = images.to(self.device)
+                    view0 = self.transformation(images)
+                    view1 = self.transformation(images)
+                    z0, z1 = self.model(view0, view1)
+
+                    optimizer.zero_grad()
+                    loss = self.loss(z0, z1)
+                    loss.backward()
+                    optimizer.step()
+                    loss_hist_train += loss.item()
+                    tepoch.set_postfix(loss=loss.item())
+
+            self.writer.add_scalar(
+                "Pretext Task/Loss/train",
+                loss_hist_train / len(train_loader),
+                epoch + 1,
+            )
+
+            self.writer.flush()
+            if (epoch + 1) % self.checkpoint_interval == 0:
+                model_path = self.checkpoint_path + "SimCLR_model_{}_epoch{}".format(
+                    self.timestamp, epoch + 1
+                )
+                torch.save(self.model.state_dict(), model_path)
+
+        model_path = self.checkpoint_path + "SimCLR_model_{}_epoch{}".format(
+            self.timestamp, epoch + 1
+        )
+        torch.save(self.model.state_dict(), model_path)
 
     def evaluate(
         self,
@@ -114,7 +199,7 @@ class Trainer:
         batch_size: int,
         dataset_train: torch.utils.data.Dataset,
         dataset_test: torch.utils.data.Dataset,
-        fine_tuning_data_proportion: float
+        fine_tuning_data_proportion: float,
     ):
         """
         Description:
@@ -135,9 +220,13 @@ class Trainer:
         """
         match optimizer:
             case "Adam":
-                optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+                optimizer = torch.optim.Adam(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
             case "SGD":
-                optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+                optimizer = torch.optim.SGD(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
 
     def load_checkpoint(self, optimizer: nn.Module):
         """ """
