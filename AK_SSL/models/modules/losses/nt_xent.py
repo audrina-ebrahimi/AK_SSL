@@ -3,10 +3,10 @@ import torch.nn as nn
 
 
 class NT_Xent(nn.Module):
-    def __init__(self, temperature: float = 0.5):
+    def __init__(self, temperature: float = 0.5, **kwargs):
         super().__init__()
         self.temperature = temperature
-
+        self.eps = 1e-8
         if abs(self.temperature) < self.eps:
             raise ValueError(
                 "Illegal temperature: abs({}) < 1e-8".format(self.temperature)

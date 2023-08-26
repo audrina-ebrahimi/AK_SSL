@@ -18,6 +18,7 @@ class SimCLR(nn.Module):
         projection_dim: int = 128,
         projection_num_layers: int = 2,
         projection_batch_norm: bool = True,
+        **kwargs
     ):
         """
         Args:

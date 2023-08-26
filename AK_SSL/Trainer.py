@@ -20,7 +20,6 @@ class Trainer:
         method: str,
         backbone: nn.Module,
         feature_size: int,
-        dataset_dir: str,
         dataset: torch.utils.data.Dataset,
         image_size: int,
         save_dir: str,
@@ -36,7 +35,6 @@ class Trainer:
             method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCo, Rotation, SimCLR, SimSiam, SwAV, VICReg]
             backbone (nn.Module): Backbone to use.
             feature_size (int): Feature size.
-            dataset_dir (str): Directory to save the dataset.
             dataset (torch.utils.data.Dataset): Dataset to use.
             image_size (int): Image size.
             save_dir (str): Directory to save the model.
@@ -50,12 +48,8 @@ class Trainer:
         self.image_size = image_size
         self.backbone = backbone
         self.feature_size = feature_size
-        self.dataset_dir = dataset_dir
         self.reload_checkpoint = reload_checkpoint
         self.checkpoint_interval = checkpoint_interval
-
-        if not os.path.exists(self.dataset_dir):
-            os.makedirs(self.dataset_dir)
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -102,6 +96,8 @@ class Trainer:
                 )
                 print("Loss: NT_Xent Loss")
                 print("Transformation: SimCLRViewTransform")
+                print("--------------------------------------")
+                print(self.dataset)
                 print("--------------------------------------")
             case "SimSiam":
                 pass
@@ -337,7 +333,6 @@ class Trainer:
                 correct_predictions = torch.eq(labels[:, None], top).any(dim=1)
                 total += labels.size(0)
                 correct += correct_predictions.sum().item()
-        
 
         print(
             f"The top_{top_k} accuracy of the network on the {len(dataset_test)} test images: {(100 * correct / total)}%"

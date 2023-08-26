@@ -3,7 +3,46 @@ import torch.nn as nn
 from typing import List, Optional, Tuple
 
 
-class SimCLRProjectionHead(nn.Module):
+class ProjectionHead(nn.Module):
+    """Base class for all projection and prediction heads.
+
+    Args:
+        blocks:
+            List of tuples, each denoting one block of the projection head MLP.
+            Each tuple reads (in_features, out_features, batch_norm_layer,
+            non_linearity_layer).
+
+    Examples:
+        >>> # the following projection head has two blocks
+        >>> # the first block uses batch norm an a ReLU non-linearity
+        >>> # the second block is a simple linear layer
+        >>> projection_head = ProjectionHead([
+        >>>     (256, 256, nn.BatchNorm1d(256), nn.ReLU()),
+        >>>     (256, 128, None, None)
+        >>> ])
+
+    """
+
+    def __init__(
+        self, blocks: List[Tuple[int, int, Optional[nn.Module], Optional[nn.Module]]]
+    ):
+        super().__init__()
+
+        layers = []
+        for input_dim, output_dim, batch_norm, non_linearity in blocks:
+            use_bias = not bool(batch_norm)
+            layers.append(nn.Linear(input_dim, output_dim, bias=use_bias))
+            if batch_norm:
+                layers.append(batch_norm)
+            if non_linearity:
+                layers.append(non_linearity)
+        self.layers = nn.Sequential(*layers)
+
+    def forward(self, x: torch.Tensor):
+        return self.layers(x)
+
+
+class SimCLRProjectionHead(ProjectionHead):
     def __init__(
         self,
         input_dim: int = 2048,
@@ -11,6 +50,7 @@ class SimCLRProjectionHead(nn.Module):
         output_dim: int = 128,
         num_layers: int = 2,
         batch_norm: bool = True,
+        **kwargs,
     ):
         """Initialize a new SimCLRProjectionHead instance.
 
@@ -27,7 +67,7 @@ class SimCLRProjectionHead(nn.Module):
                 input_dim,
                 hidden_dim,
                 nn.BatchNorm1d(hidden_dim) if batch_norm else None,
-                nn.ReLU(inplace=True),
+                nn.ReLU(),
             )
         )
         for _ in range(2, num_layers):
@@ -36,7 +76,7 @@ class SimCLRProjectionHead(nn.Module):
                     hidden_dim,
                     hidden_dim,
                     nn.BatchNorm1d(hidden_dim) if batch_norm else None,
-                    nn.ReLU(inplace=True),
+                    nn.ReLU(),
                 )
             )
         layers.append(
@@ -47,8 +87,4 @@ class SimCLRProjectionHead(nn.Module):
                 None,
             )
         )
-
-        self.layers = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor):
-        return self.layers(x)
+        super().__init__(layers)

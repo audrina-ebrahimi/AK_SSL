@@ -14,6 +14,7 @@ class SimCLRViewTransform:
         use_blur: bool = True,
         mean: Tuple[float, Optional[float], Optional[float]] = (0.485, 0.456, 0.406),
         std: Tuple[float, Optional[float], Optional[float]] = (0.229, 0.224, 0.225),
+        **kwargs,
     ):
         self.image_size = image_size
         self.color_jitter_strength = color_jitter_strength
@@ -22,7 +23,6 @@ class SimCLRViewTransform:
         self.std = std
         self.transform = T.Compose(
             [
-                T.ToTensor(),
                 T.RandomResizedCrop(image_size, antialias=True),
                 T.RandomHorizontalFlip(p=0.5),
                 T.RandomApply(
