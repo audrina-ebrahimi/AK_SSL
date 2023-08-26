@@ -7,9 +7,10 @@ from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
 
-from models.simclr import SimCLR
-from models.modules.losses.nt_xent import NT_Xent
-from models.modules.transformations.simclr import SimCLRViewTransform
+from .models.simclr import SimCLR
+from .models.evaluate import EvaluateNet
+from .models.modules.losses.nt_xent import NT_Xent
+from .models.modules.transformations.simclr import SimCLRViewTransform
 
 
 class Trainer:
@@ -31,13 +32,16 @@ class Trainer:
             Trainer class to train the model with self-supervised methods.
 
         Args:
-            method (str): Method to train the model. Options: [BarlowTwins, BYOL, DINO, MoCo, Rotation, SimCLR, SimSiam, SwAV, VICReg]
-            backbone (nn.Module): Backbone model to train.
-            dataset_dir (str): Path to the dataset directory.
-            dataset (torch.utils.data.Dataset): Dataset to train the model.
-            save_dir (str): Path to the directory where the model will be saved.
+            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCo, Rotation, SimCLR, SimSiam, SwAV, VICReg]
+            backbone (nn.Module): Backbone to use.
+            feature_size (int): Feature size.
+            dataset_dir (str): Directory to save the dataset.
+            dataset (torch.utils.data.Dataset): Dataset to use.
+            image_size (int): Image size.
+            save_dir (str): Directory to save the model.
             checkpoint_interval (int): Interval to save the model.
-            reload_checkpoint (bool): If True, the model will be loaded from the last checkpoint.
+            reload_checkpoint (bool): Whether to reload the checkpoint.
+            **kwargs: Keyword arguments.
         """
 
         self.method = method
@@ -111,6 +115,23 @@ class Trainer:
 
     def get_backbone(self):
         return self.model.backbone
+    
+    def train_one_epoch(self, tepoch, optimizer):
+        loss_hist_train = 0.0
+        for images, _ in tepoch:
+            images = images.to(self.device)
+            view0 = self.transformation(images)
+            view1 = self.transformation(images)
+            z0, z1 = self.model(view0, view1)
+
+            optimizer.zero_grad()
+            loss = self.loss(z0, z1)
+            loss.backward()
+            optimizer.step()
+            loss_hist_train += loss.item()
+            tepoch.set_postfix(loss=loss.item())
+
+        return loss_hist_train
 
     def train(
         self,
@@ -157,24 +178,11 @@ class Trainer:
         ):
             with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                 tepoch.set_description(f"Epoch {epoch + 1}")
-                loss_hist_train = 0.0
-
-                for images, _ in tepoch:
-                    images = images.to(self.device)
-                    view0 = self.transformation(images)
-                    view1 = self.transformation(images)
-                    z0, z1 = self.model(view0, view1)
-
-                    optimizer.zero_grad()
-                    loss = self.loss(z0, z1)
-                    loss.backward()
-                    optimizer.step()
-                    loss_hist_train += loss.item()
-                    tepoch.set_postfix(loss=loss.item())
+                loss_per_epoch = self.train_one_epoch(tepoch, optimizer)
 
             self.writer.add_scalar(
                 "Pretext Task/Loss/train",
-                loss_hist_train / len(train_loader),
+                loss_per_epoch / len(train_loader),
                 epoch + 1,
             )
 
@@ -208,7 +216,7 @@ class Trainer:
             Evaluate the model using the given evaluating method.
 
         Args:
-            eval_method (str): Evaluation method. Options: [inear, finetune]
+            eval_method (str): Evaluation method. Options: [linear, finetune]
             top_k (int): Top k accuracy.
             epochs (int): Number of epochs.
             optimizer (str): Optimizer to train the model. Options: [Adam, SGD]
@@ -229,6 +237,15 @@ class Trainer:
                 optimizer = torch.optim.SGD(
                     self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
+
+        match eval_method:
+            case "linear":
+                pass
+            case "finetune":
+                pass
+        
+        
+
 
     def load_checkpoint(self, optimizer: nn.Module):
         """ """

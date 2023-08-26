@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from modules.heads import SimCLRProjectionHead
+from .modules.heads import SimCLRProjectionHead
 
 
 class SimCLR(nn.Module):
@@ -19,6 +19,14 @@ class SimCLR(nn.Module):
         projection_num_layers: int = 2,
         projection_batch_norm: bool = True,
     ):
+        """
+        Args:
+            backbone (nn.Module): Backbone to extract features.
+            feature_size (int): Feature size.
+            projection_dim (int): Projection head output dimension.
+            projection_num_layers (int): Number of layers in the projection head.
+            projection_batch_norm (bool): Whether to use batch norm in the projection head.
+        """
         super().__init__()
         self.feature_size = feature_size
         self.projection_dim = projection_dim
