@@ -67,7 +67,7 @@ class SimCLRProjectionHead(ProjectionHead):
                 input_dim,
                 hidden_dim,
                 nn.BatchNorm1d(hidden_dim) if batch_norm else None,
-                nn.ReLU(),
+                nn.ReLU(inplace=True),
             )
         )
         for _ in range(2, num_layers):
@@ -76,7 +76,7 @@ class SimCLRProjectionHead(ProjectionHead):
                     hidden_dim,
                     hidden_dim,
                     nn.BatchNorm1d(hidden_dim) if batch_norm else None,
-                    nn.ReLU(),
+                    nn.ReLU(inplace=True),
                 )
             )
         layers.append(
