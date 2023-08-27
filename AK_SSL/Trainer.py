@@ -22,9 +22,9 @@ class Trainer:
         feature_size: int,
         dataset: torch.utils.data.Dataset,
         image_size: int,
-        save_dir: str,
-        checkpoint_interval: int,
-        reload_checkpoint: bool,
+        save_dir: str = ".",
+        checkpoint_interval: int = 10,
+        reload_checkpoint: bool = False,
         **kwargs,
     ):
         """
@@ -340,11 +340,11 @@ class Trainer:
 
         self.writer.close()
 
-    def load_checkpoint(self, optimizer: nn.Module):
-        """ """
-        pass
+    def load_checkpoint(self, checkpont_dir:str):
+        self.model.load_state_dict(torch.load(checkpont_dir))
+        print("Checkpoint loaded.")
+        
 
-    def save_checkpoint(
-        self, epoch: int, model: nn.Module, optimizer: nn.Module, loss: float
-    ):
-        pass
+    def save_backbone(self):
+        torch.save(self.model.backbone.state_dict(), self.save_dir + "backbone.pth")
+        print("Backbone saved.")
