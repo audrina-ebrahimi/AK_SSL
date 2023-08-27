@@ -10,7 +10,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 from .models.simclr import SimCLR
 from .models.evaluate import EvaluateNet
+from .models.barlowtwins import BarlowTwins
 from .models.modules.losses.nt_xent import NT_Xent
+from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.transformations.simclr import SimCLRViewTransform
 
 
@@ -69,24 +71,36 @@ class Trainer:
         print("Device:", self.device)
         print("--------------------------------------")
 
-        match self.method:
-            case "BarlowTwins":
+        print(f"Method: {self.method}")
+
+        match self.method.lower():
+            case "barlowtwins":
+                self.model = BarlowTwins(self.backbone, self.feature_size, **kwargs)
+                self.loss = BarlowTwinsLoss(**kwargs)
+                self.transformation = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                self.transformation_prime = self.transformation
+
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print("Loss: BarlowTwins Loss")
+                print("Transformation: SimCLRViewTransform")
+                print("Transformation_prime: SimCLRViewTransform")
+
+            case "byol":
                 pass
-            case "BYOL":
+            case "dino":
                 pass
-            case "DINO":
+            case "moco":
                 pass
-            case "MoCo":
+            case "rotation":
                 pass
-            case "Rotation":
-                pass
-            case "SimCLR":
+            case "simclr":
                 self.model = SimCLR(self.backbone, self.feature_size, **kwargs)
                 self.loss = NT_Xent(**kwargs)
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
-                print("Method: SimCLR")
                 print(f"Projection Dimension: {self.model.projection_dim}")
                 print(
                     f"Projection number of layers: {self.model.projection_num_layers}"
@@ -96,17 +110,18 @@ class Trainer:
                 )
                 print("Loss: NT_Xent Loss")
                 print("Transformation: SimCLRViewTransform")
-                print("--------------------------------------")
-                print(self.dataset)
-                print("--------------------------------------")
-            case "SimSiam":
+            case "simsiam":
                 pass
-            case "SwAV":
+            case "swav":
                 pass
-            case "VICReg":
+            case "vicreg":
                 pass
             case _:
                 raise Exception("Method not found.")
+
+        print("--------------------------------------")
+        print(self.dataset)
+        print("--------------------------------------")
 
         self.model = self.model.to(self.device)
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -119,12 +134,19 @@ class Trainer:
         loss_hist_train = 0.0
         for images, _ in tepoch:
             images = images.to(self.device)
-            view0 = self.transformation(images)
-            view1 = self.transformation(images)
-            z0, z1 = self.model(view0, view1)
+            match self.method.lower():
+                case "barlowtwins":
+                    view0 = self.transformation(images)
+                    view1 = self.transformation_prime(images)
+                    z0, z1 = self.model(view0, view1)
+                    loss = self.loss(z0, z1)
+                case _:
+                    view0 = self.transformation(images)
+                    view1 = self.transformation(images)
+                    z0, z1 = self.model(view0, view1)
+                    loss = self.loss(z0, z1)
 
             optimizer.zero_grad()
-            loss = self.loss(z0, z1)
             loss.backward()
             optimizer.step()
             loss_hist_train += loss.item()
@@ -162,6 +184,8 @@ class Trainer:
                 optimizer = torch.optim.SGD(
                     self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
+            case _:
+                raise Exception("Optimizer not found.")
 
         train_loader = torch.utils.data.DataLoader(
             self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
@@ -236,6 +260,8 @@ class Trainer:
                 optimizer_eval = torch.optim.SGD(
                     self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
+            case _:
+                raise Exception("Optimizer not found.")
 
         match eval_method:
             case "linear":
@@ -340,10 +366,9 @@ class Trainer:
 
         self.writer.close()
 
-    def load_checkpoint(self, checkpont_dir:str):
+    def load_checkpoint(self, checkpont_dir: str):
         self.model.load_state_dict(torch.load(checkpont_dir))
         print("Checkpoint loaded.")
-        
 
     def save_backbone(self):
         torch.save(self.model.backbone.state_dict(), self.save_dir + "backbone.pth")
