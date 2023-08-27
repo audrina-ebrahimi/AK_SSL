@@ -117,3 +117,35 @@ class BarlowTwinsProjectionHead(ProjectionHead):
                 (hidden_dim, output_dim, None, None),
             ]
         )
+
+
+class BYOLProjectionHead(ProjectionHead):
+    """
+    Projection head used for BYOL.
+    """
+
+    def __init__(
+        self, input_dim: int = 2048, hidden_dim: int = 4096, output_dim: int = 256
+    ):
+        super(BYOLProjectionHead, self).__init__(
+            [
+                (input_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (hidden_dim, output_dim, None, None),
+            ]
+        )
+
+
+class BYOLPredictionHead(ProjectionHead):
+    """
+    Prediction head used for BYOL.
+    """
+
+    def __init__(
+        self, input_dim: int = 256, hidden_dim: int = 4096, output_dim: int = 256
+    ):
+        super(BYOLPredictionHead, self).__init__(
+            [
+                (input_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (hidden_dim, output_dim, None, None),
+            ]
+        )
