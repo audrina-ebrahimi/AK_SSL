@@ -10,9 +10,6 @@ class MoCov3(nn.Module):
     MoCo v3: Momentum Contrast v3
     Link: https://arxiv.org/abs/2104.02057
     Implementation: https://github.com/facebookresearch/moco-v3
-    MoCo v2: Momentum Contrast v2
-    Link: https://arxiv.org/abs/2003.04297
-    Implementation: https://github.com/facebookresearch/moco
     """
 
     def __init__(
