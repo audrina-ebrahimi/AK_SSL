@@ -30,7 +30,7 @@ class BarlowTwins(nn.Module):
         self.backbone = backbone
         self.feature_size = feature_size
         self.projection_dim = projection_dim
-        self.hidden_dim = (hidden_dim,)
+        self.hidden_dim = hidden_dim
         self.projection_head = BarlowTwinsProjectionHead(
             input_dim=self.feature_size,
             hidden_dim=self.hidden_dim,

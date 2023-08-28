@@ -11,8 +11,10 @@ from torch.utils.tensorboard import SummaryWriter
 from .models.simclr import SimCLR
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
+from .models.byol import BYOL
 from .models.modules.losses.nt_xent import NT_Xent
 from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
+from .models.modules.losses.byol_loss import BYOLLoss
 from .models.modules.transformations.simclr import SimCLRViewTransform
 
 
@@ -83,12 +85,25 @@ class Trainer:
                 self.transformation_prime = self.transformation
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Hidden Dimension: {self.model.hidden_dim}")
                 print("Loss: BarlowTwins Loss")
                 print("Transformation: SimCLRViewTransform")
-                print("Transformation_prime: SimCLRViewTransform")
+                print("Transformation prime: SimCLRViewTransform")
 
             case "byol":
-                pass
+                self.model = BYOL(self.backbone, self.feature_size, **kwargs)
+                self.transformation = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                self.transformation_prime = self.transformation
+                self.loss = BYOLLoss()
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Moving average decay: {self.model.moving_average_decay}")
+                print("Loss: BYOL Loss")
+                print("Transformation: SimCLRViewTransform")
+                print("Transformation prime: SimCLRViewTransform")
+
             case "dino":
                 pass
             case "mocov2":
@@ -136,17 +151,16 @@ class Trainer:
         loss_hist_train = 0.0
         for images, _ in tepoch:
             images = images.to(self.device)
-            match self.method.lower():
-                case "barlowtwins":
+            if self.method.lower() in ['barlowtwins', 'byol']:
                     view0 = self.transformation(images)
                     view1 = self.transformation_prime(images)
                     z0, z1 = self.model(view0, view1)
                     loss = self.loss(z0, z1)
-                case _:
-                    view0 = self.transformation(images)
-                    view1 = self.transformation(images)
-                    z0, z1 = self.model(view0, view1)
-                    loss = self.loss(z0, z1)
+            else:
+                view0 = self.transformation(images)
+                view1 = self.transformation(images)
+                z0, z1 = self.model(view0, view1)
+                loss = self.loss(z0, z1)
 
             optimizer.zero_grad()
             loss.backward()
