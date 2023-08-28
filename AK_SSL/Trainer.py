@@ -10,13 +10,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 from .models.simclr import SimCLR
 from .models.mocov3 import MoCov3
+from .models.simsiam import SimSiam
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
 from .models.byol import BYOL
+
 from .models.modules.losses.nt_xent import NT_Xent
 from .models.modules.losses.info_nce import InfoNCE
+from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
 from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.losses.byol_loss import BYOLLoss
+
 from .models.modules.transformations.simclr import SimCLRViewTransform
 
 
@@ -79,7 +83,12 @@ class Trainer:
 
         match self.method.lower():
             case "barlowtwins":
-                self.model = BarlowTwins(self.backbone, self.feature_size, **kwargs)
+                self.model = BarlowTwins(
+                    self.backbone,
+                    self.feature_size,
+                    hidden_dim=self.feature_size,
+                    **kwargs,
+                )
                 self.loss = BarlowTwinsLoss(**kwargs)
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
@@ -143,7 +152,25 @@ class Trainer:
                 print("Loss: NT_Xent Loss")
                 print("Transformation: SimCLRViewTransform")
             case "simsiam":
-                pass
+                self.model = SimSiam(
+                    self.backbone,
+                    self.feature_size,
+                    projection_hidden_dim=self.feature_size,
+                    prediction_hidden_dim=self.feature_size // 4,
+                )
+                self.loss = NegativeCosineSimilarity()
+                self.transformation = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(
+                    f"Projection Hidden Dimension: {self.model.projection_hidden_dim}"
+                )
+                print(
+                    f"Prediction Hidden Dimension: {self.model.prediction_hidden_dim}"
+                )
+                print("Loss: Negative Cosine Simililarity")
+                print("Transformation: SimCLRViewTransform")
             case "swav":
                 pass
             case "vicreg":
@@ -166,11 +193,11 @@ class Trainer:
         loss_hist_train = 0.0
         for images, _ in tepoch:
             images = images.to(self.device)
-            if self.method.lower() in ['barlowtwins', 'byol', 'mocov3']:
-                    view0 = self.transformation(images)
-                    view1 = self.transformation_prime(images)
-                    z0, z1 = self.model(view0, view1)
-                    loss = self.loss(z0, z1)
+            if self.method.lower() in ["barlowtwins", "byol", "mocov3"]:
+                view0 = self.transformation(images)
+                view1 = self.transformation_prime(images)
+                z0, z1 = self.model(view0, view1)
+                loss = self.loss(z0, z1)
             else:
                 view0 = self.transformation(images)
                 view1 = self.transformation(images)

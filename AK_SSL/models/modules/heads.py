@@ -149,3 +149,41 @@ class BYOLPredictionHead(ProjectionHead):
                 (hidden_dim, output_dim, None, None),
             ]
         )
+
+
+class SimSiamProjectionHead(ProjectionHead):
+    """
+    Projection head used for SimSiam.
+    """
+
+    def __init__(
+        self, input_dim: int = 2048, hidden_dim: int = 2048, output_dim: int = 2048
+    ):
+        super(SimSiamProjectionHead, self).__init__(
+            [
+                (input_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (hidden_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (
+                    hidden_dim,
+                    output_dim,
+                    nn.BatchNorm1d(output_dim, affine=False),
+                    None,
+                ),
+            ]
+        )
+
+
+class SimSiamPredictionHead(ProjectionHead):
+    """
+    Prediction head used for SimSiam.
+    """
+
+    def __init__(
+        self, input_dim: int = 2048, hidden_dim: int = 512, output_dim: int = 2048
+    ):
+        super(SimSiamPredictionHead, self).__init__(
+            [
+                (input_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (hidden_dim, output_dim, None, None),
+            ]
+        )
