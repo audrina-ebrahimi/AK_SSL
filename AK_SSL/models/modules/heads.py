@@ -117,3 +117,4 @@ class BarlowTwinsProjectionHead(ProjectionHead):
                 (hidden_dim, output_dim, None, None),
             ]
         )
+

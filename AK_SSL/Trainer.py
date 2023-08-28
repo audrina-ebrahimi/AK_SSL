@@ -34,7 +34,7 @@ class Trainer:
             Trainer class to train the model with self-supervised methods.
 
         Args:
-            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCo, Rotation, SimCLR, SimSiam, SwAV, VICReg]
+            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCov2, MoCov3, Rotation, SimCLR, SimSiam, SwAV, VICReg]
             backbone (nn.Module): Backbone to use.
             feature_size (int): Feature size.
             dataset (torch.utils.data.Dataset): Dataset to use.
@@ -91,7 +91,9 @@ class Trainer:
                 pass
             case "dino":
                 pass
-            case "moco":
+            case "mocov2":
+                pass
+            case "mocov3":
                 pass
             case "rotation":
                 pass

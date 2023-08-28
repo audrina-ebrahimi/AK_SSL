@@ -19,6 +19,13 @@ class BarlowTwins(nn.Module):
         hidden_dim: int = 8192,
         **kwargs
     ):
+        """
+        Args:
+            backbone: Backbone network.
+            feature_size: Number of features.
+            projection_dim: Dimension of projection head output.
+            hidden_dim: Dimension of hidden layer in projection head.
+        """
         super().__init__()
         self.backbone = backbone
         self.feature_size = feature_size
