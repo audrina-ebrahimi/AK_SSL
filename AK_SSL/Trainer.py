@@ -125,9 +125,6 @@ class Trainer:
                 )
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
-                print(
-                    f"Projection Hidden Dimension: {self.model.projection_hidden_dim}"
-                )
                 print("Loss: InfoNCE Loss")
                 print("Transformation: SimCLRViewTransform")
             case "mocov3":
