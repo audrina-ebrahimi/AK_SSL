@@ -9,14 +9,14 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 from .models.simclr import SimCLR
-from .models.mocov3 import MoCov3
+from .models.moco import MoCov3, MoCoV2
 from .models.simsiam import SimSiam
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
 from .models.byol import BYOL
 
 from .models.modules.losses.nt_xent import NT_Xent
-from .models.modules.losses.info_nce import InfoNCE
+from .models.modules.losses.info_nce import InfoNCE_MoCoV3
 from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
 from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.losses.byol_loss import BYOLLoss
@@ -118,10 +118,21 @@ class Trainer:
             case "dino":
                 pass
             case "mocov2":
-                pass
+                self.model = MoCoV2(self.backbone, self.feature_size, **kwargs)
+                self.loss = nn.CrossEntropyLoss()
+                self.transformation = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(
+                    f"Projection Hidden Dimension: {self.model.projection_hidden_dim}"
+                )
+                print("Loss: InfoNCE Loss")
+                print("Transformation: SimCLRViewTransform")
             case "mocov3":
                 self.model = MoCov3(self.backbone, self.feature_size, **kwargs)
-                self.loss = InfoNCE(**kwargs)
+                self.loss = InfoNCE_MoCoV3(**kwargs)
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
@@ -157,8 +168,9 @@ class Trainer:
                     self.feature_size,
                     projection_hidden_dim=self.feature_size,
                     prediction_hidden_dim=self.feature_size // 4,
+                    **kwargs
                 )
-                self.loss = NegativeCosineSimilarity()
+                self.loss = NegativeCosineSimilarity(**kwargs)
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )

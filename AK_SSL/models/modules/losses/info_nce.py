@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class InfoNCE(nn.Module):
+class InfoNCE_MoCoV3(nn.Module):
     def __init__(self, temperature: float = 0.07, **kwargs):
         super().__init__()
         self.temperature = temperature
