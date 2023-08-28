@@ -9,10 +9,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 from .models.simclr import SimCLR
+from .models.mocov3 import MoCov3
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
 from .models.byol import BYOL
 from .models.modules.losses.nt_xent import NT_Xent
+from .models.modules.losses.info_nce import InfoNCE
 from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.losses.byol_loss import BYOLLoss
 from .models.modules.transformations.simclr import SimCLRViewTransform
@@ -109,7 +111,20 @@ class Trainer:
             case "mocov2":
                 pass
             case "mocov3":
-                pass
+                self.model = MoCov3(self.backbone, self.feature_size, **kwargs)
+                self.loss = InfoNCE(**kwargs)
+                self.transformation = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                self.trasformation_prime = self.transformation
+
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Moving average decay: {self.model.moving_average_decay}")
+                print("Loss: InfoNCE Loss")
+                print("Transformation: SimCLRViewTransform")
+                print("Transformation prime: SimCLRViewTransform")
+
             case "rotation":
                 pass
             case "simclr":
@@ -151,7 +166,7 @@ class Trainer:
         loss_hist_train = 0.0
         for images, _ in tepoch:
             images = images.to(self.device)
-            if self.method.lower() in ['barlowtwins', 'byol']:
+            if self.method.lower() in ['barlowtwins', 'byol', 'mocov3']:
                     view0 = self.transformation(images)
                     view1 = self.transformation_prime(images)
                     z0, z1 = self.model(view0, view1)

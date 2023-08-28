@@ -149,4 +149,3 @@ class BYOLPredictionHead(ProjectionHead):
                 (hidden_dim, output_dim, None, None),
             ]
         )
-
