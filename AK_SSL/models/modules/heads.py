@@ -187,3 +187,20 @@ class SimSiamPredictionHead(ProjectionHead):
                 (hidden_dim, output_dim, None, None),
             ]
         )
+
+
+class SwAVProjectionHead(ProjectionHead):
+    """
+    Projection head used for SwAV.
+    """
+
+    def __init__(
+        self, input_dim: int = 2048, hidden_dim: int = 2048, output_dim: int = 128
+    ):
+        super(SwAVProjectionHead, self).__init__(
+            [
+                (input_dim, hidden_dim, nn.BatchNorm1d(hidden_dim), nn.ReLU()),
+                (hidden_dim, output_dim, None, None),
+            ]
+        )
+
