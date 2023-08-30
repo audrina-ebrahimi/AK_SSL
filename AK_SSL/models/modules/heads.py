@@ -204,3 +204,54 @@ class SwAVProjectionHead(ProjectionHead):
             ]
         )
 
+
+class DINOProjectionHead(nn.Module):
+    """
+    Projection Head for DINO
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        output_dim: int = 256,
+        use_bn: bool = False,
+        norm_last_layer: bool = True,
+        num_layers: int = 3,
+        hidden_dim: int = 2048,
+        bottleneck_dim: int = 256,
+    ):
+        super().__init__()
+        num_layers = max(num_layers, 1)
+        if num_layers == 1:
+            self.mlp = nn.Linear(input_dim, bottleneck_dim)
+        else:
+            layers = [nn.Linear(input_dim, hidden_dim)]
+            if use_bn:
+                layers.append(nn.BatchNorm1d(hidden_dim))
+            layers.append(nn.GELU())
+            for _ in range(num_layers - 2):
+                layers.append(nn.Linear(hidden_dim, hidden_dim))
+                if use_bn:
+                    layers.append(nn.BatchNorm1d(hidden_dim))
+                layers.append(nn.GELU())
+            layers.append(nn.Linear(hidden_dim, bottleneck_dim))
+            self.mlp = nn.Sequential(*layers)
+        self.apply(self._init_weights)
+        self.last_layer = nn.utils.weight_norm(
+            nn.Linear(bottleneck_dim, output_dim, bias=False)
+        )
+        self.last_layer.weight_g.data.fill_(1)
+        if norm_last_layer:
+            self.last_layer.weight_g.requires_grad = False
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.trunc_normal_(m.weight, std=0.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        x = self.mlp(x)
+        x = nn.functional.normalize(x, dim=-1, p=2)
+        x = self.last_layer(x)
+        return x

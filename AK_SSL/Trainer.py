@@ -14,9 +14,11 @@ from .models.simsiam import SimSiam
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
 from .models.byol import BYOL
+from .models.dino import DINO
 
 from .models.modules.losses.nt_xent import NT_Xent
 from .models.modules.losses.info_nce import InfoNCE_MoCoV3
+from .models.modules.losses.dino_loss import DINOLoss
 from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
 from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.losses.byol_loss import BYOLLoss
@@ -96,7 +98,7 @@ class Trainer:
                 self.transformation_prime = self.transformation
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
                 print("Loss: BarlowTwins Loss")
                 print("Transformation: SimCLRViewTransform")
                 print("Transformation prime: SimCLRViewTransform")
@@ -109,14 +111,37 @@ class Trainer:
                 self.transformation_prime = self.transformation
                 self.loss = BYOLLoss()
                 print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
                 print(f"Moving average decay: {self.model.moving_average_decay}")
                 print("Loss: BYOL Loss")
                 print("Transformation: SimCLRViewTransform")
                 print("Transformation prime: SimCLRViewTransform")
 
             case "dino":
-                pass
+                self.model = DINO(self.backbone, self.feature_size, **kwargs)
+                self.loss = DINOLoss(
+                    self.model.projection_dim,
+                    self.model.temp_student,
+                    self.model.temp_teacher,
+                )
+                self.transformation_global1 = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                self.transformation_global2 = self.transformation_global1
+                self.transformation_local = self.transformation_global1
+
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Bottleneck Dimension: {self.model.projection_dim}")
+                print(f"Student Temp: {self.model.temp_student}")
+                print(f"Teacher Temp: {self.model.temp_teacher}")
+                print(f"Last layer noramlization: {self.model.norm_last_layer}")
+                print(f"Momentum for updating the key encoder: {self.model.m}")
+                print(f"Momentum Teacher: {self.model.momentum_teacher}")
+                print(f"Number of crops: {self.model.num_crops}")
+                print(
+                    f"Using batch normalization in projection head: {self.model.use_bn_in_head}"
+                )
             case "mocov2":
                 self.model = MoCoV2(self.backbone, self.feature_size, **kwargs)
                 self.loss = nn.CrossEntropyLoss()
@@ -125,6 +150,8 @@ class Trainer:
                 )
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Number of negative keys: {self.K}")
+                print(f"Momentum for updating the key encoder: {self.model.m}")
                 print("Loss: InfoNCE Loss")
                 print("Transformation: SimCLRViewTransform")
             case "mocov3":
@@ -136,7 +163,7 @@ class Trainer:
                 self.trasformation_prime = self.transformation
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
                 print(f"Moving average decay: {self.model.moving_average_decay}")
                 print("Loss: InfoNCE Loss")
                 print("Transformation: SimCLRViewTransform")
@@ -165,7 +192,7 @@ class Trainer:
                     self.feature_size,
                     projection_hidden_dim=self.feature_size,
                     prediction_hidden_dim=self.feature_size // 4,
-                    **kwargs
+                    **kwargs,
                 )
                 self.loss = NegativeCosineSimilarity(**kwargs)
                 self.transformation = SimCLRViewTransform(
@@ -206,6 +233,15 @@ class Trainer:
                 view0 = self.transformation(images)
                 view1 = self.transformation_prime(images)
                 z0, z1 = self.model(view0, view1)
+                loss = self.loss(z0, z1)
+            elif self.method.lower() in ["dino"]:
+                view0 = self.transformation_global1(images)
+                view1 = self.transformation_global2(images)
+                viewc = []
+                if self.model.num_crops > 0:
+                    for _ in range(self.model.num_crops):
+                        viewc.append(self.transformation_local(images))
+                z0, z1 = self.model(view0, view1, viewc)
                 loss = self.loss(z0, z1)
             else:
                 view0 = self.transformation(images)
