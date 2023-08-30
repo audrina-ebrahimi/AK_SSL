@@ -215,9 +215,7 @@ class Trainer:
                 print("Transformation: SimCLRViewTransform")
             case "swav":
                 self.model = SwAV(self.backbone, self.feature_size, **kwargs)
-                self.loss = SwAVLoss(
-                    self.model.num_crops+2, **kwargs
-                )
+                self.loss = SwAVLoss(self.model.num_crops + 2, **kwargs)
                 self.transformation_global = SimCLRViewTransform(
                     imgage_size=self.image_size, **kwargs
                 )
