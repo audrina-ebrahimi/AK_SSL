@@ -100,7 +100,7 @@ class BarlowTwinsProjectionHead(ProjectionHead):
     def __init__(
         self, input_dim: int = 2048, hidden_dim: int = 8192, output_dim: int = 8192
     ):
-        super(BarlowTwinsProjectionHead, self).init(
+        super(BarlowTwinsProjectionHead, self).__init__(
             [
                 (
                     input_dim,

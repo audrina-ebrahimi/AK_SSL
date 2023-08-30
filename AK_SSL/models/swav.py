@@ -2,7 +2,7 @@ import torch
 import copy
 import torch.nn as nn
 
-from .modules import SwAVProjectionHead
+from .modules.heads import SwAVProjectionHead
 
 
 class SwAV(nn.Module):
