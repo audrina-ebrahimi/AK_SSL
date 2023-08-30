@@ -8,20 +8,22 @@ from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
 
 
+from .models.byol import BYOL
+from .models.dino import DINO
+from .models.swav import SwAV
 from .models.simclr import SimCLR
 from .models.moco import MoCov3, MoCoV2
 from .models.simsiam import SimSiam
 from .models.evaluate import EvaluateNet
 from .models.barlowtwins import BarlowTwins
-from .models.byol import BYOL
-from .models.dino import DINO
 
 from .models.modules.losses.nt_xent import NT_Xent
-from .models.modules.losses.info_nce import InfoNCE_MoCoV3
-from .models.modules.losses.dino_loss import DINOLoss
-from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
-from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
 from .models.modules.losses.byol_loss import BYOLLoss
+from .models.modules.losses.dino_loss import DINOLoss
+from .models.modules.losses.swav_loss import SwAVLoss
+from .models.modules.losses.info_nce import InfoNCE_MoCoV3
+from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
+from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
 
 from .models.modules.transformations.simclr import SimCLRViewTransform
 
@@ -142,6 +144,10 @@ class Trainer:
                 print(
                     f"Using batch normalization in projection head: {self.model.use_bn_in_head}"
                 )
+                print("Loss: DINO Loss")
+                print("Transformation global_1: SimCLRViewTransform")
+                print("Transformation global_2: SimCLRViewTransform")
+                print("Transformation local: SimCLRViewTransform")
             case "mocov2":
                 self.model = MoCoV2(self.backbone, self.feature_size, **kwargs)
                 self.loss = nn.CrossEntropyLoss()
@@ -208,7 +214,23 @@ class Trainer:
                 print("Loss: Negative Cosine Simililarity")
                 print("Transformation: SimCLRViewTransform")
             case "swav":
-                pass
+                self.model = SwAV(self.backbone, self.feature_size, **kwargs)
+                self.loss = SwAVLoss(
+                    self.model.num_crops+2, **kwargs
+                )
+                self.transformation_global = SimCLRViewTransform(
+                    imgage_size=self.image_size, **kwargs
+                )
+                self.transformation_local = SimCLRViewTransform(
+                    image_size=self.image_size, **kwargs
+                )
+                print(f"Projection Dimension: {self.model.projection_dim}")
+                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                print(f"Number of crops: {self.model.num_crops}")
+                print("Loss: SwAV Loss")
+                print("Transformation global: SimCLRViewTransform")
+                print("Transformation local: SimCLRViewTransform")
+
             case "vicreg":
                 pass
             case _:
@@ -237,6 +259,15 @@ class Trainer:
             elif self.method.lower() in ["dino"]:
                 view0 = self.transformation_global1(images)
                 view1 = self.transformation_global2(images)
+                viewc = []
+                if self.model.num_crops > 0:
+                    for _ in range(self.model.num_crops):
+                        viewc.append(self.transformation_local(images))
+                z0, z1 = self.model(view0, view1, viewc)
+                loss = self.loss(z0, z1)
+            elif self.method.lower() in ["swav"]:
+                view0 = self.transformation_global(images)
+                view1 = self.transformation_global(images)
                 viewc = []
                 if self.model.num_crops > 0:
                     for _ in range(self.model.num_crops):
