@@ -138,8 +138,8 @@ class Trainer:
                 print(f"Student Temp: {self.model.temp_student}")
                 print(f"Teacher Temp: {self.model.temp_teacher}")
                 print(f"Last layer noramlization: {self.model.norm_last_layer}")
-                print(f"Momentum for updating the key encoder: {self.model.m}")
-                print(f"Momentum Teacher: {self.model.momentum_teacher}")
+                print(f"Center Momentum: {self.loss.center_momentum}")
+                print(f"Teacher Momentum: {self.model.momentum_teacher}")
                 print(f"Number of crops: {self.model.num_crops}")
                 print(
                     f"Using batch normalization in projection head: {self.model.use_bn_in_head}"
@@ -239,6 +239,7 @@ class Trainer:
         print("--------------------------------------")
 
         self.model = self.model.to(self.device)
+        self.loss = self.loss.to(self.device)
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
 

@@ -22,12 +22,12 @@ class DINO(nn.Module):
         temp_student: float = 0.1,
         temp_teacher: float = 0.5,
         norm_last_layer: bool = True,
-        m: float = 0.5,
         momentum_teacher: float = 0.996,
         num_crops: int = 6,
         use_bn_in_head: bool = False,
         **kwargs,
     ):
+        super().__init__()
         self.backbone = backbone
         self.feature_size = feature_size
         self.projection_dim = projection_dim
@@ -36,7 +36,6 @@ class DINO(nn.Module):
         self.temp_student = temp_student
         self.temp_teacher = temp_teacher
         self.norm_last_layer = norm_last_layer
-        self.m = m
         self.use_bn_in_head = use_bn_in_head
         self.momentum_teacher = momentum_teacher  # EMA update
         self.num_crops = num_crops
@@ -74,6 +73,16 @@ class DINO(nn.Module):
         ):
             param_k.data.copy_(param_q.data)  # initialize
             param_k.requires_grad = False  # not update by gradient
+
+    @torch.no_grad()
+    def _momentum_update_teacher(self):
+        for param_q, param_k in zip(
+            self.student.parameters(), self.teacher.parameters()
+        ):
+            param_k.data = (
+                self.momentum_teacher * param_k.data
+                + (1.0 - self.momentum_teacher) * param_q.data
+            )
 
     def forward(self, x0: torch.Tensor, x1: torch.Tensor, xc: list):
         z1_s, z2_s = self.student(x0), self.student(x1)

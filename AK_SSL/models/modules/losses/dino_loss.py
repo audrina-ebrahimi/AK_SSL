@@ -9,11 +9,13 @@ class DINOLoss(nn.Module):
         projection_dim: int,
         temp_student: float,
         temp_teacher: float,
+        center_momentum: float = 0.5,
     ):
         super().__init__()
         self.projection_dim = projection_dim
         self.temp_student = temp_student
         self.temp_teacher = temp_teacher
+        self.center_momentum = center_momentum
         self.register_buffer("center", torch.zeros(1, self.projection_dim))
 
     def forward(self, student_output: list, teacher_output: list):
@@ -35,9 +37,9 @@ class DINOLoss(nn.Module):
 
     @torch.no_grad()
     def _update_center(self, z0_t, z1_t):
-        self.center = self.m * self.center + (1 - self.m) * torch.cat(
-            [z0_t, z1_t]
-        ).mean(dim=0)
+        self.center = self.center_momentum * self.center + (
+            1 - self.center_momentum
+        ) * torch.cat([z0_t, z1_t]).mean(dim=0)
 
     def cross_entropy_loss(self, z_t, z_s):
         z_t = z_t.detach()  # stop gradient
