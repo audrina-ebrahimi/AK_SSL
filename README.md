@@ -42,6 +42,17 @@ Self-supervised learning is a subfield of machine learning where models are trai
 ### [BarlowTwins](./AK_SSL/models/barlowtwins.py)
 Barlow Twins is a self-supervised learning method that aims to learn embeddings invariant to distortions of the input sample. It achieves this by applying two distinct sets of augmentations to the same input sample, resulting in two distorted views of the same image. The objective function measures the cross-correlation matrix between the outputs of two identical networks fed with these distorted sample versions, striving to make it as close to the identity matrix as possible. This causes the embedding vectors of the distorted sample versions to become similar while minimizing redundancy among the components of these vectors. Barlow Twins particularly benefits from utilizing high-dimensional output vectors.
 
+<details><summary>Details of this method</summary>
+
+  | Loss         | Transformation     | Transformation Prime | Projection Head         | Paper     | Original Code |
+  |--------------|--------------------|----------------------|-------------------------|-----------|---------------|
+  |[BarllowTwins Loss](./AK_SSL/models/modules/losses/barlow_twins_loss.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2103.03230v3)|[Link](https://github.com/facebookresearch/barlowtwins)|
+  
+  
+  BarlowTwins Loss is inspired by HSIC loss.
+
+</details>
+
 ### [BYOL](./AK_SSL/models/byol.py)
 BYOL (Bootstrap Your Own Latent) is one of the new approaches to self-supervised learning. Like other methods, BYOL aims to learn a representation that can be utilized for downstream tasks. It employs two neural networks for learning: the online and target networks. The online network is trained to predict the target network's representation of the same image from a different augmented view. Simultaneously, the target network is updated with a slow-moving average of the online network's parameters. While state-of-the-art methods rely on negative pairs, BYOL achieves a new state of the art without them. It directly minimizes the similarity between the representations of the same image from different augmented views (positive pair).
 
