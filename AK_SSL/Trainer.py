@@ -156,7 +156,7 @@ class Trainer:
                 )
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Number of negative keys: {self.K}")
+                print(f"Number of negative keys: {self.model.K}")
                 print(f"Momentum for updating the key encoder: {self.model.m}")
                 print("Loss: InfoNCE Loss")
                 print("Transformation: SimCLRViewTransform")
@@ -166,7 +166,7 @@ class Trainer:
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
-                self.trasformation_prime = self.transformation
+                self.transformation_prime = self.transformation
 
                 print(f"Projection Dimension: {self.model.projection_dim}")
                 print(f"Projection Hidden Dimension: {self.model.hidden_dim}")

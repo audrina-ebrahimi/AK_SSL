@@ -25,12 +25,13 @@ class SwAV(nn.Module):
         use_the_queue: int = True,
         num_crops: int = 6,
     ):
+        super().__init__()
         self.backbone = backbone
         self.feature_size = feature_size
         self.projection_dim = projection_dim
         self.hidden_dim = hidden_dim
         self.epsilon = epsilon
-        self.sinkhorn_interation = sinkhorn_iterations
+        self.sinkhorn_iterations = sinkhorn_iterations
         self.num_prototypes = num_prototypes
         self.queue_length = queue_length
         self.use_the_queue = use_the_queue
@@ -43,11 +44,37 @@ class SwAV(nn.Module):
         self.projection_head = SwAVProjectionHead(
             feature_size, hidden_dim, projection_dim
         )
-        self.encoder = nn.Sequential(self.backbone, self.projector)
+        self.encoder = nn.Sequential(self.backbone, self.projection_head)
         self.prototypes = nn.Linear(
             self.projection_dim, self.num_prototypes, bias=False
         )
         self._init_weights()
+
+    @torch.no_grad()
+    def _init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    @torch.no_grad()
+    def sinkhorn(self, Q):
+        with torch.no_grad():
+            Q = torch.exp(Q / self.epsilon).t()
+            B = Q.shape[1]
+            K = Q.shape[0]
+            sum_Q = torch.sum(Q)
+            Q /= sum_Q
+            for _ in range(self.sinkhorn_iterations):
+                sum_of_rows = torch.sum(Q, dim=1, keepdim=True)
+                Q /= sum_of_rows
+                Q /= K
+                Q /= torch.sum(Q, dim=0, keepdim=True)
+                Q /= B
+            Q *= B
+            return Q.t()
 
     def forward(self, x0: torch.Tensor, x1: torch.Tensor, xc: list):
         bz = x0.shape[0]

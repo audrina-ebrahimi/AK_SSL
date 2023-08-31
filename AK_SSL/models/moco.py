@@ -70,11 +70,13 @@ class MoCov3(nn.Module):
         for param_b, param_m in zip(
             self.encoder_q.parameters(), self.encoder_k.parameters()
         ):
-            param_m.data = param_m.data * self.m + param_b.data * (1.0 - self.m)
+            param_m.data = param_m.data * self.moving_average_decay + param_b.data * (
+                1.0 - self.moving_average_decay
+            )
 
     def forward(self, x0: torch.Tensor, x1: torch.Tensor):
-        q0 = self.predictor(self.encoder_q(x0))
-        q1 = self.predictor(self.encoder_q(x1))
+        q0 = self.prediction_head(self.encoder_q(x0))
+        q1 = self.prediction_head(self.encoder_q(x1))
         with torch.no_grad():
             self._update_momentum_encoder()
             k0 = self.encoder_k(x0)
@@ -95,6 +97,7 @@ class MoCoV2(nn.Module):
         backbone: nn.Module,
         feature_size: int,
         projection_dim: int = 128,
+        temperature: float = 0.07,
         K: int = 65536,
         m: float = 0.999,
     ):
@@ -110,6 +113,7 @@ class MoCoV2(nn.Module):
         self.backbone = backbone
         self.projection_dim = projection_dim
         self.feature_size = feature_size
+        self.temperature = temperature
         self.K = K
         self.m = m
 
@@ -119,7 +123,9 @@ class MoCoV2(nn.Module):
             output_dim=self.projection_dim,
         )
 
-        self.encoder_q = self.encoder = nn.Sequential(self.backbone, self.projector)
+        self.encoder_q = self.encoder = nn.Sequential(
+            self.backbone, self.projection_head
+        )
         self.encoder_k = copy.deepcopy(self.encoder_q)
         self._init_encoder_k()
 
