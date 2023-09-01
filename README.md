@@ -1,34 +1,32 @@
+
 <h1>
 <br>AK_SSL: A Self-Supervised Learning Library
 </h1>
+
+
+
+![GitHub](https://img.shields.io/github/license/audrina-ebrahimi/AK_SSL) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
 ---
 
 ## 📒 Table of Contents
 - [📒 Table of Contents](#-table-of-contents)
 - [📍 Overview](#-overview)
-- [📂 Project Structure](#-project-structure)
 - [✍️ Self Supervised Learning](#-self-supervised-learning)
 - [🔎 Supported Methods](#-supported-methods)
 - [🚀 Getting Started](#-getting-started)
+- [💡 Tutorial](#-tutorial)
+- [📊 Benchmarks](#-benchmarks)
+- [📜 References Used](#-reference-used)
+- [💯 License](#-license)
 - [🤝 Collaborators](#-collaborators)
 
 
 ---
 ## 📍 Overview
 Welcome to the Self-Supervised Learning Library! This repository hosts a collection of tools and implementations for self-supervised learning. Self-supervised learning is a powerful paradigm that leverages unlabeled data to pre-train models, which can then be fine-tuned on specific tasks with smaller labeled datasets. This library aims to provide researchers and practitioners with a comprehensive set of tools to experiment, learn, and apply self-supervised learning techniques effectively.
-This project was our assignment during the summer apprenticeship in the newly established Intelligent and Learning System laboratory at the University of Isfahan.
+This project was our assignment during the summer apprenticeship in the newly established Intelligent and Learning System ([ILS](http://ils.ui.ac.ir/)) laboratory at the University of Isfahan.
 
----
-
-
-## 📂 Project Structure
-
- * [README.md](./README.md)
- * [AK_SSL](./AK_SSL)
-   * [Trainer.py](./AK_SSL/Trainer.py)
-   
-  
 ---
 
 ## ✍️ Self Supervised Learning
@@ -49,7 +47,7 @@ Barlow Twins is a self-supervised learning method that aims to learn embeddings 
   |[BarlowTwins Loss](./AK_SSL/models/modules/losses/barlow_twins_loss.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2103.03230v3)|[Link](https://github.com/facebookresearch/barlowtwins)|
   
   
-  BarlowTwins Loss is inspired by HSIC loss.
+  BarlowTwins Loss is inspired by [HSIC loss](https://github.com/yaohungt/Barlow-Twins-HSIC).
 
 </details>
 
@@ -152,10 +150,38 @@ cd AK_SSL
 pip install -r ./Codes/requirements.txt
 ```
 
-### 🎮 Using AK_SSL
+---
 
-
+## 💡 Tutorial
 
 ---
+
+## 📊 Benchmarks
+
+---
+
+## 📜 References Used
+
+In the development of this project, we have drawn inspiration and utilized code, libraries, and resources from various sources. We would like to acknowledge and express our gratitude to the following references and their respective authors:
+
+- [Lightly Library](https://github.com/lightly-ai/lightly)
+- [PYSSL Library](https://github.com/giakou4/pyssl)
+- [SimCLR Implementation](https://github.com/Spijkervet/SimCLR)
+- All original codes of supported methods
+
+These references have played a crucial role in enhancing the functionality and quality of our project. We extend our thanks to the authors and contributors of these resources for their valuable work.
+
+---
+
+## 💯 License
+
+This project is licensed under the [MIT License](./LICENSE).
+
+---
+
 ## 🤝 Collaborators
-[Kian Majlessi](https://github.com/kianmajl) and [Audrina Ebrahimi](https://github.com/audrina-ebrahimi)
+By:
+  - [Kian Majlessi](https://github.com/kianmajl)
+  - [Audrina Ebrahimi](https://github.com/audrina-ebrahimi)
+
+Thanks to [Dr. Peyman Adibi](https://scholar.google.com/citations?user=u-FQZMkAAAAJ) and [Dr. Hossein Karshenas](https://scholar.google.com/citations?user=BjMFkWEAAAAJ), for their invaluable guidance and support throughout this project.
