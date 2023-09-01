@@ -413,11 +413,11 @@ class Trainer:
                 dataset_train = Subset(dataset_train, indices)
 
         match optimizer.lower():
-            case "Adam":
+            case "adam":
                 optimizer_eval = torch.optim.Adam(
                     net.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
-            case "SGD":
+            case "sgd":
                 optimizer_eval = torch.optim.SGD(
                     net.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
