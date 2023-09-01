@@ -26,7 +26,7 @@ class EvaluateNet(nn.Module):
 
         self.fc = nn.Linear(feature_size, num_classes, bias=True)
 
-    def forward(self, x:torch.Tensor):
+    def forward(self, x: torch.Tensor):
         x = self.backbone(x)
         x = self.fc(x)
         return x

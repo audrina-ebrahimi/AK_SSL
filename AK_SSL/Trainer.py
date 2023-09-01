@@ -308,13 +308,17 @@ class Trainer:
             weight_decay (float): Weight decay.
             learning_rate (float): Learning rate.
         """
-        match optimizer:
-            case "Adam":
+        match optimizer.lower():
+            case "adam":
                 optimizer = torch.optim.Adam(
                     self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
-            case "SGD":
+            case "sgd":
                 optimizer = torch.optim.SGD(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+            case "adamw":
+                optimizer = torch.optim.AdamW(
                     self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
             case _:
@@ -384,19 +388,8 @@ class Trainer:
             fine_tuning_data_proportion (float): Proportion of the dataset between 0 and 1 to use for fine-tuning.
 
         """
-        match optimizer:
-            case "Adam":
-                optimizer_eval = torch.optim.Adam(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
-                )
-            case "SGD":
-                optimizer_eval = torch.optim.SGD(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
-                )
-            case _:
-                raise Exception("Optimizer not found.")
 
-        match eval_method:
+        match eval_method.lower():
             case "linear":
                 net = EvaluateNet(
                     self.model.backbone,
@@ -418,6 +411,22 @@ class Trainer:
                 indices = torch.randperm(num_samples)[:subset_size]
 
                 dataset_train = Subset(dataset_train, indices)
+
+        match optimizer.lower():
+            case "Adam":
+                optimizer_eval = torch.optim.Adam(
+                    net.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+            case "SGD":
+                optimizer_eval = torch.optim.SGD(
+                    net.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+            case "adamw":
+                optimizer_eval = torch.optim.AdamW(
+                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                )
+            case _:
+                raise Exception("Optimizer not found.")
 
         net = net.to(self.device)
         criterion = nn.CrossEntropyLoss()
