@@ -1,3 +1,4 @@
-from .Trainer import Trainer
+from AK_SSL.Trainer import Trainer
 
-__all__ = ["Trainer"]
+__name__ = "AK_SSL"
+__version__ = "0.0.1"

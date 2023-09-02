@@ -2,7 +2,7 @@ import torch
 import copy
 import torch.nn as nn
 
-from .modules.heads import SwAVProjectionHead
+from AK_SSL.models.modules.heads import SwAVProjectionHead
 
 
 class SwAV(nn.Module):

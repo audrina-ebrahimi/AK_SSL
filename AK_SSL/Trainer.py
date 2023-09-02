@@ -8,24 +8,9 @@ from torch.utils.data import Subset
 from torch.utils.tensorboard import SummaryWriter
 
 
-from .models.byol import BYOL
-from .models.dino import DINO
-from .models.swav import SwAV
-from .models.simclr import SimCLR
-from .models.moco import MoCov3, MoCoV2
-from .models.simsiam import SimSiam
-from .models.evaluate import EvaluateNet
-from .models.barlowtwins import BarlowTwins
-
-from .models.modules.losses.nt_xent import NT_Xent
-from .models.modules.losses.byol_loss import BYOLLoss
-from .models.modules.losses.dino_loss import DINOLoss
-from .models.modules.losses.swav_loss import SwAVLoss
-from .models.modules.losses.info_nce import InfoNCE_MoCoV3
-from .models.modules.losses.barlow_twins_loss import BarlowTwinsLoss
-from .models.modules.losses.negative_cosine_similarity import NegativeCosineSimilarity
-
-from .models.modules.transformations.simclr import SimCLRViewTransform
+from AK_SSL.models import *
+from AK_SSL.models.modules.losses import *
+from AK_SSL.models.modules.transformations import *
 
 
 class Trainer:

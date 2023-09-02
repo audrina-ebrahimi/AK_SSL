@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .modules.heads import SimCLRProjectionHead
+from AK_SSL.models.modules.heads import SimCLRProjectionHead
 
 
 class SimCLR(nn.Module):

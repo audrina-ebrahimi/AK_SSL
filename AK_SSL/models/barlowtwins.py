@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .modules.heads import BarlowTwinsProjectionHead
+from AK_SSL.models.modules.heads import BarlowTwinsProjectionHead
 
 
 class BarlowTwins(nn.Module):

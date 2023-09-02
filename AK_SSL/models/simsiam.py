@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .modules.heads import SimSiamPredictionHead, SimSiamProjectionHead
+from AK_SSL.models.modules.heads import SimSiamPredictionHead, SimSiamProjectionHead
 
 
 class SimSiam(nn.Module):

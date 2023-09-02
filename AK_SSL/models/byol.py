@@ -2,7 +2,7 @@ import torch
 import copy
 import torch.nn as nn
 
-from .modules.heads import BYOLPredictionHead, BYOLProjectionHead
+from AK_SSL.models.modules.heads import BYOLPredictionHead, BYOLProjectionHead
 
 
 class BYOL(nn.Module):
