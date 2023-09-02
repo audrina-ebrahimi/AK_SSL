@@ -32,7 +32,7 @@ if __name__ == "__main__":
     packages = setuptools.find_packages()
 
     project_urls = {
-        "Github": "https://github.com/lightly-ai/lightly",
+        "Github": "https://github.com/audrina-ebrahimi/AK_SSL",
     }
 
     classifiers = [
