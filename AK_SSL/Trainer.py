@@ -315,6 +315,9 @@ class Trainer:
 
         self.model.train(True)
 
+        if self.reload_checkpoint:
+            start_epoch = self.reload_latest_checkpoint()
+
         for epoch in tqdm(
             range(start_epoch - 1, epochs),
             unit="epoch",
@@ -500,3 +503,14 @@ class Trainer:
     def save_backbone(self):
         torch.save(self.model.backbone.state_dict(), self.save_dir + "backbone.pth")
         print("Backbone saved.")
+        
+    def relaod_latest_checkpoint(self):
+        checkpoints = os.listdir(self.checkpoint_path)
+        checkpoints.sort(key=os.path.getmtime)
+
+        if len(checkpoints) == 0:
+            raise Exception("No checkpoints found.")
+
+        self.load_checkpoint(self.checkpoint_path + checkpoints[-1])
+
+        return int(checkpoints[-1].split('_')[-1]) + 1
