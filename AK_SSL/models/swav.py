@@ -22,7 +22,7 @@ class SwAV(nn.Module):
         sinkhorn_iterations: int = 3,
         num_prototypes: int = 3000,
         queue_length: int = 64,
-        use_the_queue: int = True,
+        use_the_queue: bool = True,
         num_crops: int = 6,
     ):
         super().__init__()
