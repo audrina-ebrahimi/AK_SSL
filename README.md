@@ -5,7 +5,8 @@
 
 
 
-![GitHub](https://img.shields.io/github/license/audrina-ebrahimi/AK_SSL) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
+![GitHub](https://img.shields.io/github/license/audrina-ebrahimi/AK_SSL) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg) ![PyPI - Version](https://img.shields.io/pypi/v/AK_SSL)
+
 
 ---
 
@@ -172,10 +173,10 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 - <details><summary>SimCLR Transformation</summary>
   
   ```
-    color_jitter_strength     # as float to Set the strength of color
-    use_blur                  # s boolean to apply blur augmentation
-    mean
-    std
+    color_jitter_strength     # a float to Set the strength of color
+    use_blur                  # a boolean to specify whether to apply blur augmentation
+    mean                      # a float to specify the mean values for each channel
+    std                       # a float to specify the standard deviation values for each channel
   ```
   
   </details>
@@ -184,13 +185,13 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method
     ```
-      projection_dim
-      hidden_dim
-      moving_average_decay
+      projection_dim          # an integer to specify dimensionality of the projection head
+      hidden_dim              # an integer to specify dimensionality of the hidden layers in the neural network
+      moving_average_decay    # a float to specify decay rate for moving averages during training
     ```
   - Loss
     ```
-      lambda_param
+      lambda_param            # a float to controlling the balance between the main loss and the orthogonality loss
     ```
   
   </details>
@@ -200,19 +201,19 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method
     ```
-      projection_dim
-      hidden_dim
-      bottleneck_dim
-      temp_student
-      temp_teacher
-      norm_last_layer
-      momentum_teacher
-      num_crops
-      use_bn_in_head
+      projection_dim          # an integer to specify dimensionality of the projection head
+      hidden_dim              # an integer to specify dimensionality of the hidden layers in the projection head neural network
+      bottleneck_dim          # an integer to specify dimensionality of the bottleneck layer in the student network
+      temp_student            # a float to specify temperature parameter for the student's logits
+      temp_teacher            # a float to specify temperature parameter for the teacher's logits
+      norm_last_layer         # a boolean to specify whether to normalize the last layer of the network
+      momentum_teacher        # a float to control momentum coefficient for updating the teacher network
+      num_crops               # an integer to determines the number of augmentations applied to each input image
+      use_bn_in_head          # a boolean to spcecify whether to use batch normalization in the projection head
     ```
   - Loss
     ```
-      center_momentum
+      center_momentum        # a float to control momentum coefficient for updating the center of cluster assignments
     ```
 
   </details>
@@ -222,10 +223,13 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method
     ```
-      projection_dim
-      temperature
-      K
-      m
+      projection_dim          # an integer to specify dimensionality of the projection head
+      K                       # an integer to specify number of negative samples per positive sample in the contrastive loss
+      m                       # a float to control momentum coefficient for updating the moving-average encoder
+    ```
+  - Loss
+    ```
+      temperature             # a float to control the temperature for the contrastive loss function
     ```
 
   </details>
@@ -234,13 +238,13 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method  
     ```
-      projection_dim
-      hidden_dim
-      moving_average_decay
+      projection_dim          # an integer to specify dimensionality of the projection head
+      hidden_dim              # an integer to specify dimensionality of the hidden layers in the projection head neural network
+      moving_average_decay    # a float to specify decay rate for moving averages during training
     ```
   - Loss
     ```
-      temperature
+      temperature             # a float to control the temperature for the contrastive loss function
     ```
 
   </details>
@@ -250,13 +254,13 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method
     ```
-      projection_dim
-      projection_num_layers
-      projection_batch_norm
+      projection_dim          # an integer to specify dimensionality of the projection head
+      projection_num_layers   # an integer to specify the number of layers in the projection head (1: SimCLR v1, 2: SimCLR v2)
+      projection_batch_norm   # a boolean to indicate whether to use batch normalization in the projection head
     ```
   - Loss
     ```
-      temperature
+      temperature             # a float to control the temperature for the contrastive loss function
     ```
 
   </details>
@@ -265,11 +269,11 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   
   - Method
     ```
-      projection_dim
+      projection_dim          # an integer to specify dimensionality of the projection head
     ```
   - Loss
     ```
-      eps
+      eps                     # a float to control the stability of the loss function
     ```
 
   </details>
@@ -279,18 +283,18 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
   - Method
     ```
-      projection_dim
-      hidden_dim
-      epsilon
-      sinkhorn_iterations
-      num_prototypes
-      queue_length
-      use_the_queue
-      num_crops
+      projection_dim          # an integer to specify dimensionality of the projection head
+      hidden_dim              an integer to specify dimensionality of the hidden layers in the projection head neural network
+      epsilon                 # a float to control numerical stability in the algorithm
+      sinkhorn_iterations     # an integer to specify the number of iterations in the Sinkhorn-Knopp algorithm
+      num_prototypes          # an integer to specify the number of prototypes or clusters for contrastive learning
+      queue_length            # an integer to specify rhe length of the queue for maintaining negative samples
+      use_the_queue           # a boolean to indicate whether to use the queue for negative samples
+      num_crops               # an integer to determines the number of augmentations applied to each input image
     ```
   - Loss
     ```
-      temperature
+      temperature             # a float to control the temperature for the contrastive loss function
     ```
 
   </details>
