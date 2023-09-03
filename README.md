@@ -14,7 +14,7 @@
 - [📍 Overview](#-overview)
 - [✍️ Self Supervised Learning](#-self-supervised-learning)
 - [🔎 Supported Methods](#-supported-methods)
-- [🚀 Getting Started](#-getting-started)
+- [📦 Installation](#-installation)
 - [💡 Tutorial](#-tutorial)
 - [📊 Benchmarks](#-benchmarks)
 - [📜 References Used](#-reference-used)
@@ -24,7 +24,7 @@
 
 ---
 ## 📍 Overview
-Welcome to the Self-Supervised Learning Library! This repository hosts a collection of tools and implementations for self-supervised learning. Self-supervised learning is a powerful paradigm that leverages unlabeled data to pre-train models, which can then be fine-tuned on specific tasks with smaller labeled datasets. This library aims to provide researchers and practitioners with a comprehensive set of tools to experiment, learn, and apply self-supervised learning techniques effectively.
+Welcome to the Self-Supervised Learning Library! This repository hosts a collection of tools and implementations for self-supervised learning. Self-supervised learning is a powerful paradigm that leverages unlabeled data to pre-trained models, which can then be fine-tuned on specific tasks with smaller labeled datasets. This library aims to provide researchers and practitioners with a comprehensive set of tools to experiment, learn, and apply self-supervised learning techniques effectively.
 This project was our assignment during the summer apprenticeship in the newly established Intelligent and Learning System ([ILS](http://ils.ui.ac.ir/)) laboratory at the University of Isfahan.
 
 ---
@@ -127,13 +127,8 @@ SwAV, or Swapping Assignments Between Views, is a self-supervised learning appro
 </details>
 
 ---
-## 🚀 Getting Started
 
-### ✔️ Requirements
-
-Before you begin, ensure that you have the packages in `requirements.txt` installed.
-
-### 📦 Installation
+## 📦 Installation
 
 You can install AK_SSL and its dependencies from PyPI with:
 
@@ -169,7 +164,7 @@ trainer = Trainer(
     save_dir="./save_for_report/",  # directory to save training checkpoints and logs as string
     checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
     reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
-    **kwargs                        # other argument 
+    **kwargs                        # other arguments 
 )
 ```
 Note: The use of **kwargs can differ between methods, depending on the specific method, loss function, transformation, and other factors. If you are utilizing any of the objectives listed below, you must provide their arguments during the initialization of the Trainer class.
