@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     python_requires = ">=3.10"
 
-    install_requires = ["torch", "torchvision", "tqdm"]
+    install_requires = ["torch", "torchvision", "torcheval", "tqdm"]
 
     packages = setuptools.find_packages()
 

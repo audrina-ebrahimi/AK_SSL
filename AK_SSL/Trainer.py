@@ -4,6 +4,7 @@ from torch import nn
 from tqdm.auto import tqdm
 from datetime import datetime
 from torch.utils.data import Subset
+from torcheval.metrics.functional import multiclass_accuracy
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -110,7 +111,7 @@ class Trainer:
                     self.model.projection_dim,
                     self.model.temp_student,
                     self.model.temp_teacher,
-                    **kwargs
+                    **kwargs,
                 )
                 self.transformation_global1 = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
@@ -309,13 +310,13 @@ class Trainer:
                 raise Exception("Optimizer not found.")
 
         train_loader = torch.utils.data.DataLoader(
-            self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
+            self.dataset, batch_size=batch_size, shuffle=True
         )
 
         self.model.train(True)
 
         if self.reload_checkpoint:
-            start_epoch = self.reload_latest_checkpoint()
+            start_epoch = self._reload_latest_checkpoint()
 
         for epoch in tqdm(
             range(start_epoch - 1, epochs),
@@ -335,20 +336,20 @@ class Trainer:
 
             self.writer.flush()
             if (epoch + 1) % self.checkpoint_interval == 0:
-                model_path = self.checkpoint_path + "SimCLR_model_{}_epoch{}".format(
-                    self.timestamp, epoch + 1
+                model_path = self.checkpoint_path + "{}_model_{}_epoch{}".format(
+                    self.method, self.timestamp, epoch + 1
                 )
                 torch.save(self.model.state_dict(), model_path)
 
-        model_path = self.checkpoint_path + "SimCLR_model_{}_epoch{}".format(
-            self.timestamp, epoch + 1
+        model_path = self.checkpoint_path + "{}_model_{}_epoch{}".format(
+            self.method, self.timestamp, epoch + 1
         )
         torch.save(self.model.state_dict(), model_path)
 
     def evaluate(
         self,
-        dataset_train: torch.utils.data.Dataset,
-        dataset_test: torch.utils.data.Dataset,
+        train_dataset: torch.utils.data.Dataset,
+        test_dataset: torch.utils.data.Dataset,
         eval_method: str = "linear",
         top_k: int = 1,
         epochs: int = 100,
@@ -370,8 +371,8 @@ class Trainer:
             weight_decay (float): Weight decay.
             learning_rate (float): Learning rate.
             batch_size (int): Batch size.
-            dataset_train (torch.utils.data.Dataset): Dataset to train the downstream model.
-            dataset_test (torch.utils.data.Dataset): Dataset to test the downstream model.
+            train_dataset (torch.utils.data.Dataset): Dataset to train the downstream model.
+            test_dataset (torch.utils.data.Dataset): Dataset to test the downstream model.
             fine_tuning_data_proportion (float): Proportion of the dataset between 0 and 1 to use for fine-tuning.
 
         """
@@ -381,23 +382,23 @@ class Trainer:
                 net = EvaluateNet(
                     self.model.backbone,
                     self.feature_size,
-                    len(dataset_train.classes),
+                    len(train_dataset.classes),
                     True,
                 )
             case "finetune":
                 net = EvaluateNet(
                     self.model.backbone,
                     self.feature_size,
-                    len(dataset_train.classes),
+                    len(train_dataset.classes),
                     False,
                 )
 
-                num_samples = len(dataset_train)
+                num_samples = len(train_dataset)
                 subset_size = int(num_samples * fine_tuning_data_proportion)
 
                 indices = torch.randperm(num_samples)[:subset_size]
 
-                dataset_train = Subset(dataset_train, indices)
+                train_dataset = Subset(train_dataset, indices)
 
         match optimizer.lower():
             case "adam":
@@ -419,7 +420,7 @@ class Trainer:
         criterion = nn.CrossEntropyLoss()
 
         train_loader_ds = torch.utils.data.DataLoader(
-            dataset_train, batch_size=batch_size, shuffle=True
+            train_dataset, batch_size=batch_size, shuffle=True
         )
 
         net.train(True)
@@ -472,25 +473,20 @@ class Trainer:
                 self.writer.flush()
 
         test_loader_ds = torch.utils.data.DataLoader(
-            dataset_test, batch_size=batch_size, shuffle=True
+            test_dataset, batch_size=batch_size, shuffle=True
         )
 
-        correct = 0
-        total = 0
-
+        acc_test = 0.0
         net.eval()
         with torch.no_grad():
             for images, labels in tqdm(test_loader_ds, unit="batch"):
                 images = images.to(self.device)
                 labels = labels.to(self.device)
                 outputs = net(images)
-                _, top = torch.topk(outputs.data, k=top_k, dim=1)
-                correct_predictions = torch.eq(labels[:, None], top).any(dim=1)
-                total += labels.size(0)
-                correct += correct_predictions.sum().item()
+                acc_test += multiclass_accuracy(outputs, labels, k=top_k).item()
 
         print(
-            f"The top_{top_k} accuracy of the network on the {len(dataset_test)} test images: {(100 * correct / total)}%"
+            f"The top_{top_k} accuracy of the network on the {len(test_dataset)} test images: {(100 * acc_test / len(test_loader_ds))}%"
         )
 
         self.writer.close()
@@ -502,8 +498,8 @@ class Trainer:
     def save_backbone(self):
         torch.save(self.model.backbone.state_dict(), self.save_dir + "backbone.pth")
         print("Backbone saved.")
-        
-    def relaod_latest_checkpoint(self):
+
+    def _reload_latest_checkpoint(self):
         checkpoints = os.listdir(self.checkpoint_path)
         checkpoints.sort(key=os.path.getmtime)
 
@@ -512,4 +508,4 @@ class Trainer:
 
         self.load_checkpoint(self.checkpoint_path + checkpoints[-1])
 
-        return int(checkpoints[-1].split('_')[-1]) + 1
+        return int(checkpoints[-1].split("_")[-1]) + 1
