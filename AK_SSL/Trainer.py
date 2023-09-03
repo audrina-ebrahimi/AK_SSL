@@ -96,7 +96,7 @@ class Trainer:
                     image_size=self.image_size, **kwargs
                 )
                 self.transformation_prime = self.transformation
-                self.loss = BYOLLoss()
+                self.loss = BYOLLoss(**kwargs)
                 print(f"Projection Dimension: {self.model.projection_dim}")
                 print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
                 print(f"Moving average decay: {self.model.moving_average_decay}")
@@ -110,6 +110,7 @@ class Trainer:
                     self.model.projection_dim,
                     self.model.temp_student,
                     self.model.temp_teacher,
+                    **kwargs
                 )
                 self.transformation_global1 = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
@@ -204,9 +205,7 @@ class Trainer:
                 self.transformation_global = SimCLRViewTransform(
                     imgage_size=self.image_size, **kwargs
                 )
-                self.transformation_local = SimCLRViewTransform(
-                    image_size=self.image_size, **kwargs
-                )
+                self.transformation_local = self.transformation_global
                 print(f"Projection Dimension: {self.model.projection_dim}")
                 print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
                 print(f"Number of crops: {self.model.num_crops}")

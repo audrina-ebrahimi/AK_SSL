@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class NegativeCosineSimilarity(torch.nn.Module):
-    def __init__(self, dim: int = 1, eps: float = 1e-8) -> None:
+    def __init__(self, dim: int = 1, eps: float = 1e-8, **kwargs) -> None:
         super().__init__()
         self.dim = dim
         self.eps = eps

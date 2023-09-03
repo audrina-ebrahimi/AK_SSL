@@ -10,6 +10,7 @@ class DINOLoss(nn.Module):
         temp_student: float,
         temp_teacher: float,
         center_momentum: float = 0.5,
+        **kwargs
     ):
         super().__init__()
         self.projection_dim = projection_dim

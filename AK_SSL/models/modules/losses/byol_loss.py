@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class BYOLLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, **kwargs):
         super().__init__()
 
     @staticmethod

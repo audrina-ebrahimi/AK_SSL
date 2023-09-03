@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class BarlowTwinsLoss(nn.Module):
-    def __init__(self, lambda_param: float = 5e-3):
+    def __init__(self, lambda_param: float = 5e-3, **kwargs):
         super(BarlowTwinsLoss, self).__init__()
         self.lambda_param = lambda_param
 
