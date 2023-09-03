@@ -284,7 +284,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   - Method
     ```
       projection_dim          # an integer to specify dimensionality of the projection head
-      hidden_dim              an integer to specify dimensionality of the hidden layers in the projection head neural network
+      hidden_dim              # an integer to specify dimensionality of the hidden layers in the projection head neural network
       epsilon                 # a float to control numerical stability in the algorithm
       sinkhorn_iterations     # an integer to specify the number of iterations in the Sinkhorn-Knopp algorithm
       num_prototypes          # an integer to specify the number of prototypes or clusters for contrastive learning
@@ -298,6 +298,18 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
     ```
 
   </details>
+
+
+### Training the Self-Supervised Model
+
+
+### Evaluating th Self-Supervised Model
+
+### Get the Self-Supervised Model backbone
+
+### Loading Self-Supervised Model Checkpoint
+
+### Saving Self-Supervised Model backbone
 
 You can find the description of Trainer class and function using help built in fuction in python.
 
