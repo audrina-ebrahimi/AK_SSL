@@ -135,24 +135,172 @@ Before you begin, ensure that you have the packages in `requirements.txt` instal
 
 ### 📦 Installation
 
-1. Clone the AK_SSL repository:
+You can install AK_SSL and its dependencies from PyPI with:
+
+
 ```sh
-git clone https://github.com/audrina-ebrahimi/AK_SSL.git
+pip install AK-SSL
 ```
 
-2. Change to the project directory:
-```sh
-cd AK_SSL
-```
-
-3. Install the dependencies:
-```sh
-pip install -r ./Codes/requirements.txt
-```
+We strongly recommend that you install AK_SSL in a dedicated virtualenv, to avoid conflicting with your system packages
 
 ---
 
 ## 💡 Tutorial
+
+Using AK_SSL, you have the flexibility to leverage the most recent self-supervised learning techniques seamlessly, harnessing the complete capabilities of PyTorch. You can explore diverse backbones, models, and optimizer while benefiting from a user-friendly framework that has been purposefully crafted for ease of use.
+
+You can easily import Trainer module from AK_SSL library and start utilizing it right away.
+
+```python
+from AK_SSL import Trainer
+```
+
+### Initializing the Trainer
+Now, let's initialize the self-supervised trainer with our chosen method, backbone, dataset, and other configurations.
+
+```python
+trainer = Trainer(
+    method="barlowtwins",           # training method as string
+    backbone=backbone,              # backbone architecture as torch.Module
+    feature_size=feature_size,      # size of the extracted features as integer
+    dataset=train_dataset,          # training dataset as torch.utils.data.Dataset
+    image_size=32,                  # dataset image size as integer
+    save_dir="./save_for_report/",  # directory to save training checkpoints and logs as string
+    checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
+    reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
+    **kwargs                        # other argument 
+)
+```
+Note: The use of **kwargs can differ between methods, depending on the specific method, loss function, transformation, and other factors. If you are utilizing any of the objectives listed below, you must provide their arguments during the initialization of the Trainer class.
+
+- <details><summary>SimCLR Transformation</summary>
+  
+  ```
+    color_jitter_strength     # as float to Set the strength of color
+    use_blur                  # s boolean to apply blur augmentation
+    mean
+    std
+  ```
+  
+  </details>
+
+- <details><summary>BarlowTwins</summary>
+
+  - Method
+    ```
+      projection_dim
+      hidden_dim
+      moving_average_decay
+    ```
+  - Loss
+    ```
+      lambda_param
+    ```
+  
+  </details>
+
+
+- <details><summary>DINO Method</summary>
+
+  - Method
+    ```
+      projection_dim
+      hidden_dim
+      bottleneck_dim
+      temp_student
+      temp_teacher
+      norm_last_layer
+      momentum_teacher
+      num_crops
+      use_bn_in_head
+    ```
+  - Loss
+    ```
+      center_momentum
+    ```
+
+  </details>
+
+
+- <details><summary>MoCo v2</summary>
+
+  - Method
+    ```
+      projection_dim
+      temperature
+      K
+      m
+    ```
+
+  </details>
+  
+- <details><summary>MoCo v3</summary>
+
+  - Method  
+    ```
+      projection_dim
+      hidden_dim
+      moving_average_decay
+    ```
+  - Loss
+    ```
+      temperature
+    ```
+
+  </details>
+
+
+- <details><summary>SimCLR</summary>
+
+  - Method
+    ```
+      projection_dim
+      projection_num_layers
+      projection_batch_norm
+    ```
+  - Loss
+    ```
+      temperature
+    ```
+
+  </details>
+
+- <details><summary>SimSiam</summary>
+  
+  - Method
+    ```
+      projection_dim
+    ```
+  - Loss
+    ```
+      eps
+    ```
+
+  </details>
+  
+
+- <details><summary>SwAV</summary>
+
+  - Method
+    ```
+      projection_dim
+      hidden_dim
+      epsilon
+      sinkhorn_iterations
+      num_prototypes
+      queue_length
+      use_the_queue
+      num_crops
+    ```
+  - Loss
+    ```
+      temperature
+    ```
+
+  </details>
+
+You can find the description of Trainer class and function using help built in fuction in python.
 
 ---
 
