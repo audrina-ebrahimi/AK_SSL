@@ -32,7 +32,7 @@ class Trainer:
             Trainer class to train the model with self-supervised methods.
 
         Args:
-            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCov2, MoCov3, Rotation, SimCLR, SimSiam, SwAV, VICReg]
+            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCov2, MoCov3, SimCLR, SimSiam, SwAV]
             backbone (nn.Module): Backbone to use.
             feature_size (int): Feature size.
             dataset (torch.utils.data.Dataset): Dataset to use.
@@ -162,8 +162,6 @@ class Trainer:
                 print("Transformation: SimCLRViewTransform")
                 print("Transformation prime: SimCLRViewTransform")
 
-            case "rotation":
-                pass
             case "simclr":
                 self.model = SimCLR(self.backbone, self.feature_size, **kwargs)
                 self.loss = NT_Xent(**kwargs)
@@ -214,8 +212,6 @@ class Trainer:
                 print("Transformation global: SimCLRViewTransform")
                 print("Transformation local: SimCLRViewTransform")
 
-            case "vicreg":
-                pass
             case _:
                 raise Exception("Method not found.")
 
@@ -227,6 +223,9 @@ class Trainer:
         self.loss = self.loss.to(self.device)
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
+
+    def __del__(self):
+        self.writer.close()
 
     def get_backbone(self):
         return self.model.backbone
@@ -289,7 +288,7 @@ class Trainer:
             batch_size (int): Batch size.
             start_epoch (int): Epoch to start the training.
             epochs (int): Number of epochs.
-            optimizer (str): Optimizer to train the model. Options: [Adam, SGD]
+            optimizer (str): Optimizer to train the model. Options: [Adam, SGD, AdamW]
             weight_decay (float): Weight decay.
             learning_rate (float): Learning rate.
         """
@@ -367,7 +366,7 @@ class Trainer:
             eval_method (str): Evaluation method. Options: [linear, finetune]
             top_k (int): Top k accuracy.
             epochs (int): Number of epochs.
-            optimizer (str): Optimizer to train the model. Options: [Adam, SGD]
+            optimizer (str): Optimizer to train the model. Options: [Adam, SGD, AdamW]
             weight_decay (float): Weight decay.
             learning_rate (float): Learning rate.
             batch_size (int): Batch size.
@@ -411,7 +410,7 @@ class Trainer:
                 )
             case "adamw":
                 optimizer_eval = torch.optim.AdamW(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    net.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
             case _:
                 raise Exception("Optimizer not found.")
@@ -485,11 +484,11 @@ class Trainer:
                 outputs = net(images)
                 acc_test += multiclass_accuracy(outputs, labels, k=top_k).item()
 
+        acc = 100 * acc_test / len(test_loader_ds)
         print(
-            f"The top_{top_k} accuracy of the network on the {len(test_dataset)} test images: {(100 * acc_test / len(test_loader_ds))}%"
+            f"The top_{top_k} accuracy of the network on the {len(test_dataset)} test images: {acc}%"
         )
-
-        self.writer.close()
+        return acc
 
     def load_checkpoint(self, checkpont_dir: str):
         self.model.load_state_dict(torch.load(checkpont_dir))
