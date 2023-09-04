@@ -162,9 +162,10 @@ trainer = Trainer(
     feature_size=feature_size,      # size of the extracted features as integer
     dataset=train_dataset,          # training dataset as torch.utils.data.Dataset
     image_size=32,                  # dataset image size as integer
-    save_dir="./save_for_report/",  # directory to save training checkpoints and logs as string
+    save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
     checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
     reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
+    verbose=True,                   # enable verbose output for training progress as a boolean
     **kwargs                        # other arguments 
 )
 ```
@@ -302,20 +303,93 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 
 ### Training the Self-Supervised Model
 
+Then, we'll train the self-supervised model using the specified parameters.
+
+```python
+  trainer.train(               
+      batch_size=256,          # the number of training examples used in each iteration as integer
+      start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
+      epochs=100,              # the total number of training epochs as integer
+      optimizer="Adam",        # the optimization algorithm used for training as string (Adam, SGD, or AdamW)
+      weight_decay=1e-6,       # a regularization term to prevent overfitting by penalizing large weights as float
+      learning_rate=1e-3,      # the learning rate for the optimizer as float
+)
+```
+
 
 ### Evaluating th Self-Supervised Model
+This evaluation assesses how well the pre-trained model performs on a dataset, specifically for tasks related to linear evaluation.
+```python
+trainer.evaluate(
+    train_dataset=train_dataset,      # to specify the training dataset as torch.utils.data.Dataset
+    test_dataset=test_dataset,        # to specify the testing dataset as torch.utils.data.Dataset
+    eval_method="linear",             # the evaluation method to use as string (linear or finetune)
+    top_k=1,                          # the number of top-k predictions to consider during evaluation as integer
+    epochs=100,                       # the number of evaluation epochs as integer
+    optimizer='Adam',                 # the optimization algorithm used during evaluation as string (Adam, SGD, or AdamW)
+    weight_decay=1e-6,                # a regularization term applied during evaluation to prevent overfitting as float
+    learning_rate=1e-3,               # the learning rate for the optimizer during evaluation as float
+    batch_size=256,                   # the batch size used for evaluation in integer
+    fine_tuning_data_proportion=1,    # the proportion of training data to use during evalutation as float in range of (0.0, 1]
+)
+```
 
 ### Get the Self-Supervised Model backbone
 
+In case you want to use the pre-trained network in your own downstream task, you need to define a downstream task model. This model should include the self-supervised model backbone as one of its components. Here's an example of how to define a simple downstream model class:
+
+```python
+  class DownstreamNet(nn.Module):
+      def __init__(self, backbone, **kwargs):
+          super().__init__()
+          self.backbone = backbone
+  
+          # You can define your downstream task model here
+  
+      def forward(self, x):
+          x = self.backbone(x)
+          # ...
+  
+  
+  downstream_model = DownstreamNet(trainer.get_backbone())
+```
+
 ### Loading Self-Supervised Model Checkpoint
 
-### Saving Self-Supervised Model backbone
+To load a previous checkpoint into the network, you can do as below.
+```python
+path = 'YOUR CHECKPOINT PATH'
+trainer.load_checkpoint(path)
+```
 
-You can find the description of Trainer class and function using help built in fuction in python.
+### Saving Self-Supervised Model backbone
+To save model backbone, you can do as below.
+
+```python
+trainer.save_backbone()
+```
+
+
+That's it! You've successfully trained and evaluate a self-supervised model using the AK_SSL Python library. You can further customize and experiment with different self-supervised methods, backbones, and hyperparameters to suit your specific tasks.
+You can find the description of Trainer class and its function using `help` built in fuction in python.
 
 ---
 
 ## 📊 Benchmarks
+
+We executed models and obtained results on the CIFAR10 dataset, with plans to expand our experimentation to other datasets. Please note that hyperparameters were not optimized for maximum accuracy.
+
+|    Method    | Backbone | Batch Size | Epoch | Optimizer | Learning Rate | Weight Decay | Linear Top1 | Tensorboard | Download Backbone | Download Full Checkpoint |
+|--------------|----------|------------|-------|-----------|---------------|--------------|-------------|-------------|-------------------|--------------------------|
+|  BarlowTwins | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|     BYOL     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|     DINO     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|    MoCo v2   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|    MoCo v3   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|   SimCLR v1  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|   SimCLR v2  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|    SimSiam   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|     SwAv     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
 
 ---
 
