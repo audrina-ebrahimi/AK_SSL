@@ -1,4 +1,5 @@
 import os
+import re
 import torch
 from torch import nn
 from tqdm.auto import tqdm
@@ -25,6 +26,7 @@ class Trainer:
         save_dir: str = ".",
         checkpoint_interval: int = 10,
         reload_checkpoint: bool = False,
+        verbose: bool = True,
         **kwargs,
     ):
         """
@@ -50,6 +52,7 @@ class Trainer:
         self.feature_size = feature_size
         self.reload_checkpoint = reload_checkpoint
         self.checkpoint_interval = checkpoint_interval
+        self.verbose = verbose
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -64,12 +67,12 @@ class Trainer:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.num_workers = os.cpu_count()
 
-        print("----------------AK_SSL----------------")
-        print("Number of workers:", self.num_workers)
-        print("Device:", self.device)
-        print("--------------------------------------")
-
-        print(f"Method: {self.method}")
+        if self.verbose:
+            print("----------------AK_SSL----------------")
+            print("Number of workers:", self.num_workers)
+            print("Device:", self.device)
+            print("--------------------------------------")
+            print(f"Method: {self.method}")
 
         match self.method.lower():
             case "barlowtwins":
@@ -84,12 +87,12 @@ class Trainer:
                     image_size=self.image_size, **kwargs
                 )
                 self.transformation_prime = self.transformation
-
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
-                print("Loss: BarlowTwins Loss")
-                print("Transformation: SimCLRViewTransform")
-                print("Transformation prime: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                    print("Loss: BarlowTwins Loss")
+                    print("Transformation: SimCLRViewTransform")
+                    print("Transformation prime: SimCLRViewTransform")
 
             case "byol":
                 self.model = BYOL(self.backbone, self.feature_size, **kwargs)
@@ -98,12 +101,13 @@ class Trainer:
                 )
                 self.transformation_prime = self.transformation
                 self.loss = BYOLLoss(**kwargs)
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
-                print(f"Moving average decay: {self.model.moving_average_decay}")
-                print("Loss: BYOL Loss")
-                print("Transformation: SimCLRViewTransform")
-                print("Transformation prime: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                    print(f"Moving average decay: {self.model.moving_average_decay}")
+                    print("Loss: BYOL Loss")
+                    print("Transformation: SimCLRViewTransform")
+                    print("Transformation prime: SimCLRViewTransform")
 
             case "dino":
                 self.model = DINO(self.backbone, self.feature_size, **kwargs)
@@ -118,35 +122,35 @@ class Trainer:
                 )
                 self.transformation_global2 = self.transformation_global1
                 self.transformation_local = self.transformation_global1
-
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
-                print(f"Bottleneck Dimension: {self.model.projection_dim}")
-                print(f"Student Temp: {self.model.temp_student}")
-                print(f"Teacher Temp: {self.model.temp_teacher}")
-                print(f"Last layer noramlization: {self.model.norm_last_layer}")
-                print(f"Center Momentum: {self.loss.center_momentum}")
-                print(f"Teacher Momentum: {self.model.momentum_teacher}")
-                print(f"Number of crops: {self.model.num_crops}")
-                print(
-                    f"Using batch normalization in projection head: {self.model.use_bn_in_head}"
-                )
-                print("Loss: DINO Loss")
-                print("Transformation global_1: SimCLRViewTransform")
-                print("Transformation global_2: SimCLRViewTransform")
-                print("Transformation local: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                    print(f"Bottleneck Dimension: {self.model.projection_dim}")
+                    print(f"Student Temp: {self.model.temp_student}")
+                    print(f"Teacher Temp: {self.model.temp_teacher}")
+                    print(f"Last layer noramlization: {self.model.norm_last_layer}")
+                    print(f"Center Momentum: {self.loss.center_momentum}")
+                    print(f"Teacher Momentum: {self.model.momentum_teacher}")
+                    print(f"Number of crops: {self.model.num_crops}")
+                    print(
+                        f"Using batch normalization in projection head: {self.model.use_bn_in_head}"
+                    )
+                    print("Loss: DINO Loss")
+                    print("Transformation global_1: SimCLRViewTransform")
+                    print("Transformation global_2: SimCLRViewTransform")
+                    print("Transformation local: SimCLRViewTransform")
             case "mocov2":
                 self.model = MoCoV2(self.backbone, self.feature_size, **kwargs)
                 self.loss = nn.CrossEntropyLoss()
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
-
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Number of negative keys: {self.model.K}")
-                print(f"Momentum for updating the key encoder: {self.model.m}")
-                print("Loss: InfoNCE Loss")
-                print("Transformation: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Number of negative keys: {self.model.K}")
+                    print(f"Momentum for updating the key encoder: {self.model.m}")
+                    print("Loss: InfoNCE Loss")
+                    print("Transformation: SimCLRViewTransform")
             case "mocov3":
                 self.model = MoCov3(self.backbone, self.feature_size, **kwargs)
                 self.loss = InfoNCE_MoCoV3(**kwargs)
@@ -154,13 +158,13 @@ class Trainer:
                     image_size=self.image_size, **kwargs
                 )
                 self.transformation_prime = self.transformation
-
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
-                print(f"Moving average decay: {self.model.moving_average_decay}")
-                print("Loss: InfoNCE Loss")
-                print("Transformation: SimCLRViewTransform")
-                print("Transformation prime: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                    print(f"Moving average decay: {self.model.moving_average_decay}")
+                    print("Loss: InfoNCE Loss")
+                    print("Transformation: SimCLRViewTransform")
+                    print("Transformation prime: SimCLRViewTransform")
 
             case "simclr":
                 self.model = SimCLR(self.backbone, self.feature_size, **kwargs)
@@ -168,15 +172,16 @@ class Trainer:
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(
-                    f"Projection number of layers: {self.model.projection_num_layers}"
-                )
-                print(
-                    f"Projection batch normalization: {self.model.projection_batch_norm}"
-                )
-                print("Loss: NT_Xent Loss")
-                print("Transformation: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(
+                        f"Projection number of layers: {self.model.projection_num_layers}"
+                    )
+                    print(
+                        f"Projection batch normalization: {self.model.projection_batch_norm}"
+                    )
+                    print("Loss: NT_Xent Loss")
+                    print("Transformation: SimCLRViewTransform")
             case "simsiam":
                 self.model = SimSiam(
                     self.backbone,
@@ -189,15 +194,16 @@ class Trainer:
                 self.transformation = SimCLRViewTransform(
                     image_size=self.image_size, **kwargs
                 )
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(
-                    f"Projection Hidden Dimension: {self.model.projection_hidden_dim}"
-                )
-                print(
-                    f"Prediction Hidden Dimension: {self.model.prediction_hidden_dim}"
-                )
-                print("Loss: Negative Cosine Simililarity")
-                print("Transformation: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(
+                        f"Projection Hidden Dimension: {self.model.projection_hidden_dim}"
+                    )
+                    print(
+                        f"Prediction Hidden Dimension: {self.model.prediction_hidden_dim}"
+                    )
+                    print("Loss: Negative Cosine Simililarity")
+                    print("Transformation: SimCLRViewTransform")
             case "swav":
                 self.model = SwAV(self.backbone, self.feature_size, **kwargs)
                 self.loss = SwAVLoss(self.model.num_crops + 2, **kwargs)
@@ -205,19 +211,21 @@ class Trainer:
                     imgage_size=self.image_size, **kwargs
                 )
                 self.transformation_local = self.transformation_global
-                print(f"Projection Dimension: {self.model.projection_dim}")
-                print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
-                print(f"Number of crops: {self.model.num_crops}")
-                print("Loss: SwAV Loss")
-                print("Transformation global: SimCLRViewTransform")
-                print("Transformation local: SimCLRViewTransform")
+                if self.verbose:
+                    print(f"Projection Dimension: {self.model.projection_dim}")
+                    print(f"Projection Hidden Dimension: {self.model.hidden_dim}")
+                    print(f"Number of crops: {self.model.num_crops}")
+                    print("Loss: SwAV Loss")
+                    print("Transformation global: SimCLRViewTransform")
+                    print("Transformation local: SimCLRViewTransform")
 
             case _:
                 raise Exception("Method not found.")
 
-        print("--------------------------------------")
-        print(self.dataset)
-        print("--------------------------------------")
+        if self.verbose:
+            print("--------------------------------------")
+            print(self.dataset)
+            print("--------------------------------------")
 
         self.model = self.model.to(self.device)
         self.loss = self.loss.to(self.device)
@@ -315,7 +323,7 @@ class Trainer:
         self.model.train(True)
 
         if self.reload_checkpoint:
-            start_epoch = self._reload_latest_checkpoint()
+            start_epoch = self._reload_latest_checkpoint() + 1
 
         for epoch in tqdm(
             range(start_epoch - 1, epochs),
@@ -385,6 +393,11 @@ class Trainer:
                     True,
                 )
             case "finetune":
+                if not 0 <= fine_tuning_data_proportion <= 1:
+                    raise ValueError(
+                        "The fine_tuning_data_proportion parameter must be between 0 and 1."
+                    )
+
                 net = EvaluateNet(
                     self.model.backbone,
                     self.feature_size,
@@ -485,26 +498,41 @@ class Trainer:
                 acc_test += multiclass_accuracy(outputs, labels, k=top_k).item()
 
         acc = 100 * acc_test / len(test_loader_ds)
-        print(
-            f"The top_{top_k} accuracy of the network on the {len(test_dataset)} test images: {acc}%"
-        )
+        if self.verbose:
+            print(
+                f"The top_{top_k} accuracy of the network on the {len(test_dataset)} test images: {acc}%"
+            )
         return acc
 
     def load_checkpoint(self, checkpont_dir: str):
         self.model.load_state_dict(torch.load(checkpont_dir))
-        print("Checkpoint loaded.")
+        if self.verbose:
+            print("Checkpoint loaded.")
 
     def save_backbone(self):
         torch.save(self.model.backbone.state_dict(), self.save_dir + "backbone.pth")
-        print("Backbone saved.")
+        if self.verbose:
+            print("Backbone saved.")
+            print(f"""Backbone file path: {self.save_dir + "backbone.pth"}""")
 
     def _reload_latest_checkpoint(self):
         checkpoints = os.listdir(self.checkpoint_path)
-        checkpoints.sort(key=os.path.getmtime)
+        sorted_checkpoints = sorted(
+            [os.path.join(self.checkpoint_path, i) for i in checkpoints],
+            key=os.path.getmtime,
+        )
 
-        if len(checkpoints) == 0:
+        if len(sorted_checkpoints) == 0:
             raise Exception("No checkpoints found.")
 
-        self.load_checkpoint(self.checkpoint_path + checkpoints[-1])
+        self.load_checkpoint(sorted_checkpoints[-1])
 
-        return int(checkpoints[-1].split("_")[-1]) + 1
+        match = re.search(r"epoch(\d+)", sorted_checkpoints[-1])
+        if match:
+            epoch = int(match.group(1))
+            if self.verbose:
+                print(f"Starting Epoch: {epoch}")
+        else:
+            raise Exception("Epoch not found in file name.")
+
+        return epoch
