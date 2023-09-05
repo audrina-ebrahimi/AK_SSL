@@ -21,6 +21,7 @@ class DINO(nn.Module):
         bottleneck_dim: int = 256,
         temp_student: float = 0.1,
         temp_teacher: float = 0.5,
+        projection_num_layers: int = 3,
         norm_last_layer: bool = True,
         momentum_teacher: float = 0.996,
         num_crops: int = 6,
@@ -39,6 +40,7 @@ class DINO(nn.Module):
         self.use_bn_in_head = use_bn_in_head
         self.momentum_teacher = momentum_teacher  # EMA update
         self.num_crops = num_crops
+        self.projection_num_layers = projection_num_layers
 
         self.student_projection_head = DINOProjectionHead(
             input_dim=self.feature_size,
@@ -47,7 +49,7 @@ class DINO(nn.Module):
             bottleneck_dim=self.bottleneck_dim,
             use_bn=self.use_bn_in_head,
             norm_last_layer=self.norm_last_layer,
-            **kwargs,
+            num_layers=self.projection_num_layers,
         )
         self.student = self.encoder = nn.Sequential(
             self.backbone, self.student_projection_head
@@ -59,7 +61,7 @@ class DINO(nn.Module):
             bottleneck_dim=self.bottleneck_dim,
             use_bn=self.use_bn_in_head,
             norm_last_layer=self.norm_last_layer,
-            **kwargs,
+            num_layers=self.projection_num_layers,
         )
         self.teacher = nn.Sequential(
             copy.deepcopy(self.backbone), self.teacher_projection_head

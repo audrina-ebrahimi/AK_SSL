@@ -19,7 +19,7 @@ class MoCov3(nn.Module):
         projection_dim: int = 256,
         hidden_dim: int = 4096,
         moving_average_decay: float = 1.0,
-        **kwargs
+        **kwargs,
     ):
         """
         Args:
@@ -100,6 +100,7 @@ class MoCoV2(nn.Module):
         temperature: float = 0.07,
         K: int = 65536,
         m: float = 0.999,
+        **kwargs,
     ):
         """
         Args:
