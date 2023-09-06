@@ -20,9 +20,8 @@ class EvaluateNet(nn.Module):
         super().__init__()
         self.backbone = backbone
 
-        if is_linear:
-            for par in self.backbone.parameters():
-                par.requires_grad = False
+        for param in self.backbone.parameters():
+            param.requires_grad = not is_linear
 
         self.fc = nn.Linear(feature_size, num_classes, bias=True)
 

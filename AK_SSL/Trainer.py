@@ -317,7 +317,7 @@ class Trainer:
                 raise Exception("Optimizer not found.")
 
         train_loader = torch.utils.data.DataLoader(
-            self.dataset, batch_size=batch_size, shuffle=True
+            self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
         )
 
         self.model.train(True)
