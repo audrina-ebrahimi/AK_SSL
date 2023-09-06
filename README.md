@@ -1,4 +1,4 @@
-<p align="center">
+![image](https://github.com/audrina-ebrahimi/AK_SSL/assets/82520498/500a86e1-6fc6-4784-8692-e5fb38dc5b20)<p align="center">
   <img src="https://raw.githubusercontent.com/audrina-ebrahimi/AK_SSL/main/Documents/logo.png" alt="AK_SSL Logo"  width="50%"/>
 </p>
 
@@ -160,7 +160,7 @@ Now, let's initialize the self-supervised trainer with our chosen method, backbo
 
 ```python
 trainer = Trainer(
-    method="barlowtwins",           # training method as string
+    method="barlowtwins",           # training method as string (BarlowTwins, BYOL, DINO, MoCov2, MoCov3, SimCLR, SimSiam, SwAV)
     backbone=backbone,              # backbone architecture as torch.Module
     feature_size=feature_size,      # size of the extracted features as integer
     dataset=train_dataset,          # training dataset as torch.utils.data.Dataset
@@ -382,17 +382,17 @@ You can find the description of Trainer class and its function using `help` buil
 
 We executed models and obtained results on the CIFAR10 dataset, with plans to expand our experimentation to other datasets. Please note that hyperparameters were not optimized for maximum accuracy.
 
-|    Method    | Backbone | Batch Size | Epoch | Optimizer | Learning Rate | Weight Decay | Linear Top1 | Tensorboard | Download Backbone | Download Full Checkpoint |
-|--------------|----------|------------|-------|-----------|---------------|--------------|-------------|-------------|-------------------|--------------------------|
-|  BarlowTwins | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|     BYOL     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|     DINO     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|    MoCo v2   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|    MoCo v3   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|   SimCLR v1  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|   SimCLR v2  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|    SimSiam   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
-|     SwAv     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |             |                   |                          |
+|    Method    | Backbone | Batch Size | Epoch | Optimizer | Learning Rate | Weight Decay | Linear Top1 | Fine-tune Top1 | Download Backbone | Download Full Checkpoint |
+|--------------|----------|------------|-------|-----------|---------------|--------------|-------------|----------------|-------------------|--------------------------|
+|  BarlowTwins | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   70.92%    |     79.50%     |[Link](https://www.dropbox.com/scl/fi/ok7vojezit6p3v9vonvox/backbone.pth?rlkey=xddpc9bkqnc38xx2viivnem3n&dl=0)|[Link](https://www.dropbox.com/scl/fi/1d32t8hdlkqxbfokrqlq4/barlowtwins_model_20230905_054800_epoch800?rlkey=1i4xe7k5g9i79vaq18uufhanl&dl=0)|
+|     BYOL     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   71.06%    |     71.04%     |      [Link]()     |        [Link]()           |
+|     DINO     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   9.91%     |     9.76%      |      [Link]()     |[Link](https://www.dropbox.com/scl/fi/sz2wjycyc6u86syjviq95/dino_model_20230905_190529_epoch800?rlkey=qfhppzoa1cu1np0hhz3upqu8v&dl=0)|
+|    MoCo v2   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   70.08%    |     78.71%     |[Link](https://www.dropbox.com/scl/fi/b29krbcej64chpif0tztq/backbone.pth?rlkey=n9c8z3nnpdgovml6wjdgo0txp&dl=0)|[Link](https://www.dropbox.com/scl/fi/ewcatz0yuors9z327jjix/mocov2_model_20230906_162610_epoch800.pth?rlkey=fh5myjhgsn59rulx10t0g3hl8&dl=0)|
+|    MoCo v3   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   59.98%    |     74.20%     |[Link](https://www.dropbox.com/scl/fi/3q787003vr4xa8gy5ozeu/backbone.pth?rlkey=qqy16a8tuyxvcgg7t0gi88ysq&dl=0)|[Link](https://www.dropbox.com/scl/fi/d1icqzui08ey1u1xpao4i/MoCov3_model_20230905_154626_epoch800?rlkey=o4zuo5fisi067n45yl76yc152&dl=0)|
+|   SimCLR v1  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   73.09%    |     72.75%     |[Link](https://www.dropbox.com/scl/fi/r0j23uv3krbcq2k7i6ynn/backbone-simclr1.pth?rlkey=tzdsjj0mucge377qwjqg961bs&dl=0)|[Link](https://www.dropbox.com/scl/fi/kognvkgbvzblpmx6ia1h1/simclrv1_model_20230906_065315_epoch800?rlkey=kzq1nuf305gx17hveokt1o6on&dl=0)|
+|   SimCLR v2  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   73.07%    |     81.52%     |      [Link]()     |        [Link]()          |
+|    SimSiam   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   19.77%    |     70.77%     |[Link](https://www.dropbox.com/scl/fi/nlpqjijho9vqigub2ibho/backbone.pth?rlkey=7otvzznf1qf0xvskqnp8wii9k&dl=0)|[Link](https://www.dropbox.com/scl/fi/5c1un6jjec01aphxzkv5d/simsiam_model_20230906_101310_epoch800?rlkey=teilbfj6wbi1wytg1mcgx0bcw&dl=0)|
+|     SwAv     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |                |      [Link]()     |        [Link]()          |
 
 ---
 
