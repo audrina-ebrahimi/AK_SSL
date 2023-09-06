@@ -385,17 +385,17 @@ We executed models and obtained results on the CIFAR10 dataset, with plans to ex
 |    Method    | Backbone | Batch Size | Epoch | Optimizer | Learning Rate | Weight Decay | Linear Top1 | Fine-tune Top1 | Download Backbone | Download Full Checkpoint |
 |--------------|----------|------------|-------|-----------|---------------|--------------|-------------|----------------|-------------------|--------------------------|
 |  BarlowTwins | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   70.92%    |     79.50%     |[Link](https://www.dropbox.com/scl/fi/ok7vojezit6p3v9vonvox/backbone.pth?rlkey=xddpc9bkqnc38xx2viivnem3n&dl=0)|[Link](https://www.dropbox.com/scl/fi/1d32t8hdlkqxbfokrqlq4/barlowtwins_model_20230905_054800_epoch800?rlkey=1i4xe7k5g9i79vaq18uufhanl&dl=0)|
-|     BYOL     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   71.06%    |     71.04%     |      [Link]()     |        [Link]()           |
-|     DINO     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   9.91%     |     9.76%      |                   |                           |
+|     BYOL     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   71.06%    |     71.04%     |                   |                          |
+|     DINO     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   9.91%     |     9.76%      |                   |                          |
 |    MoCo v2   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   70.08%    |     78.71%     |[Link](https://www.dropbox.com/scl/fi/b29krbcej64chpif0tztq/backbone.pth?rlkey=n9c8z3nnpdgovml6wjdgo0txp&dl=0)|[Link](https://www.dropbox.com/scl/fi/ewcatz0yuors9z327jjix/mocov2_model_20230906_162610_epoch800.pth?rlkey=fh5myjhgsn59rulx10t0g3hl8&dl=0)|
 |    MoCo v3   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   59.98%    |     74.20%     |[Link](https://www.dropbox.com/scl/fi/3q787003vr4xa8gy5ozeu/backbone.pth?rlkey=qqy16a8tuyxvcgg7t0gi88ysq&dl=0)|[Link](https://www.dropbox.com/scl/fi/d1icqzui08ey1u1xpao4i/MoCov3_model_20230905_154626_epoch800?rlkey=o4zuo5fisi067n45yl76yc152&dl=0)|
 |   SimCLR v1  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   73.09%    |     72.75%     |[Link](https://www.dropbox.com/scl/fi/r0j23uv3krbcq2k7i6ynn/backbone-simclr1.pth?rlkey=tzdsjj0mucge377qwjqg961bs&dl=0)|[Link](https://www.dropbox.com/scl/fi/kognvkgbvzblpmx6ia1h1/simclrv1_model_20230906_065315_epoch800?rlkey=kzq1nuf305gx17hveokt1o6on&dl=0)|
-|   SimCLR v2  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   73.07%    |     81.52%     |      [Link]()     |        [Link]()          |
+|   SimCLR v2  | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   73.07%    |     81.52%     |                   |                          |
 |    SimSiam   | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   19.77%    |     70.77%     |[Link](https://www.dropbox.com/scl/fi/nlpqjijho9vqigub2ibho/backbone.pth?rlkey=7otvzznf1qf0xvskqnp8wii9k&dl=0)|[Link](https://www.dropbox.com/scl/fi/5c1un6jjec01aphxzkv5d/simsiam_model_20230906_101310_epoch800?rlkey=teilbfj6wbi1wytg1mcgx0bcw&dl=0)|
-|     SwAv     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |             |                |      [Link]()     |        [Link]()          |
+|     SwAv     | Resnet18 |    256     |  800  |   Adam    |     1e-3      |     1e-6     |   33.36%    |     74.14%     |                   |                          |
 
 ---
-
+  
 ## 📜 References Used
 
 In the development of this project, we have drawn inspiration and utilized code, libraries, and resources from various sources. We would like to acknowledge and express our gratitude to the following references and their respective authors:
