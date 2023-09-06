@@ -1,4 +1,4 @@
-![image](https://github.com/audrina-ebrahimi/AK_SSL/assets/82520498/500a86e1-6fc6-4784-8692-e5fb38dc5b20)<p align="center">
+<p align="center">
   <img src="https://raw.githubusercontent.com/audrina-ebrahimi/AK_SSL/main/Documents/logo.png" alt="AK_SSL Logo"  width="50%"/>
 </p>
 
