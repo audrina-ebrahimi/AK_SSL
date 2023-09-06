@@ -24,6 +24,7 @@ class SwAV(nn.Module):
         queue_length: int = 64,
         use_the_queue: bool = True,
         num_crops: int = 6,
+        **kwargs,
     ):
         super().__init__()
         self.backbone = backbone

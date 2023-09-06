@@ -343,12 +343,12 @@ class Trainer:
 
             self.writer.flush()
             if (epoch + 1) % self.checkpoint_interval == 0:
-                model_path = self.checkpoint_path + "{}_model_{}_epoch{}".format(
+                model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
                     self.method, self.timestamp, epoch + 1
                 )
                 torch.save(self.model.state_dict(), model_path)
 
-        model_path = self.checkpoint_path + "{}_model_{}_epoch{}".format(
+        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
             self.method, self.timestamp, epoch + 1
         )
         torch.save(self.model.state_dict(), model_path)
