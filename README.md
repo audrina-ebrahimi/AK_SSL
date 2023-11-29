@@ -8,7 +8,7 @@
 
 
 
-![GitHub](https://img.shields.io/github/license/audrina-ebrahimi/AK_SSL) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg) ![PyPI - Version](https://img.shields.io/pypi/v/AK_SSL)
+![GitHub](https://img.shields.io/github/license/audrina-ebrahimi/AK_SSL) ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg) ![PyPI - Version](https://img.shields.io/pypi/v/AK_SSL) [![Downloads](https://static.pepy.tech/badge/AK_SSL)](https://pepy.tech/project/AK_SSL)
 
 
 ---
