@@ -10,9 +10,9 @@ from torcheval.metrics.functional import multiclass_accuracy
 from torch.utils.tensorboard import SummaryWriter
 
 
-from AK_SSL.models import *
-from AK_SSL.models.modules.losses import *
-from AK_SSL.models.modules.transformations import *
+from AK_SSL.vision.models import *
+from AK_SSL.vision.models.modules.losses import *
+from AK_SSL.vision.models.modules.transformations import *
 
 
 class Trainer:

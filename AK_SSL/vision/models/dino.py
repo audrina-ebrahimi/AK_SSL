@@ -2,7 +2,7 @@ import torch
 import copy
 import torch.nn as nn
 
-from AK_SSL.models.modules.heads import DINOProjectionHead
+from AK_SSL.vision.models.modules.heads import DINOProjectionHead
 
 
 class DINO(nn.Module):
