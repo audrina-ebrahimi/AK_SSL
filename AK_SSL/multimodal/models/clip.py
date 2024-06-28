@@ -13,32 +13,34 @@ class CLIP(nn.Module):
 
     def __init__(
         self,
-        image_encoder: nn.Module,
-        text_encoder: nn.Module,
-        image_feature_dim: int = 0,
-        text_feature_dim: int = 768,
-        projection_dim: int = 256,
+        vision_model: nn.Module,
+        transformer_model: nn.Module,
+        vision_feature_dim: int = 0,
+        transformer_feature_dim: int = 768,
+        embed_dim: int = 256,
         init_tau: float = np.log(1.0),
         init_b: float = 0.0,
     ):
         super(CLIP, self).__init__()
 
-        if not image_feature_dim:
-            image_feature_dim = self.get_feature_size(image_encoder)
+        if not vision_feature_dim:
+            vision_feature_dim = self.get_feature_size(vision_model)
 
-        self.image_encoder = image_encoder
-        self.text_encoder = text_encoder
+        self.vision_model = vision_model
+        self.transformer_model = transformer_model
 
         self.image_projection = torch.nn.Sequential(
-            torch.nn.Linear(image_feature_dim, image_feature_dim, bias=False),
+            torch.nn.Linear(vision_feature_dim, vision_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(image_feature_dim, projection_dim, bias=False),
+            torch.nn.Linear(vision_feature_dim, embed_dim, bias=False),
         )
 
         self.text_projection = torch.nn.Sequential(
-            torch.nn.Linear(text_feature_dim, text_feature_dim, bias=False),
+            torch.nn.Linear(
+                transformer_feature_dim, transformer_feature_dim, bias=False
+            ),
             torch.nn.ReLU(),
-            torch.nn.Linear(text_feature_dim, projection_dim, bias=False),
+            torch.nn.Linear(transformer_feature_dim, embed_dim, bias=False),
         )
 
         self.t_prime = nn.Parameter(torch.ones([]) * init_tau)
@@ -54,13 +56,13 @@ class CLIP(nn.Module):
         return image_features @ text_features.t() * self.t_prime.exp() + self.b
 
     def extract_image_features(self, images: torch.Tensor):
-        image_features = self.image_encoder(images)
+        image_features = self.vision_model(images)
         return self.image_projection(image_features)
 
     def extract_text_features(
         self, input_ids: torch.Tensor, attention_mask: torch.Tensor
     ):
-        text_features = self.text_encoder(input_ids, attention_mask)
+        text_features = self.transformer_model(input_ids, attention_mask)
         return self.text_projection(text_features)
 
     def get_feature_size(self, encoder: nn.Module):
