@@ -11,14 +11,15 @@ class CLIP(nn.Module):
     Implementation: https://github.com/openai/CLIP
     """
 
-    def __init__(self,
-                 image_encoder: nn.Module,
-                 text_encoder: nn.Module,
-                 image_feature_dim: int = 0,
-                 text_feature_dim: int = 768,
-                 projection_dim: int = 256,
-                 init_tau: float = np.log(1.0),
-                 init_b: float = 0.0
+    def __init__(
+        self,
+        image_encoder: nn.Module,
+        text_encoder: nn.Module,
+        image_feature_dim: int = 0,
+        text_feature_dim: int = 768,
+        projection_dim: int = 256,
+        init_tau: float = np.log(1.0),
+        init_b: float = 0.0,
     ):
         super(CLIP, self).__init__()
 
@@ -31,17 +32,21 @@ class CLIP(nn.Module):
         self.image_projection = torch.nn.Sequential(
             torch.nn.Linear(image_feature_dim, image_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(image_feature_dim, projection_dim, bias=False))
-        
+            torch.nn.Linear(image_feature_dim, projection_dim, bias=False),
+        )
+
         self.text_projection = torch.nn.Sequential(
             torch.nn.Linear(text_feature_dim, text_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(text_feature_dim, projection_dim, bias=False))
-        
+            torch.nn.Linear(text_feature_dim, projection_dim, bias=False),
+        )
+
         self.t_prime = nn.Parameter(torch.ones([]) * init_tau)
         self.b = nn.Parameter(torch.ones([]) * init_b)
 
-    def forward(self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor):
+    def forward(
+        self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor
+    ):
         image_features = self.extract_image_features(image)
         text_features = self.extract_text_features(input_ids, attention_mask)
         image_features = F.normalize(image_features, p=2, dim=-1)
@@ -52,10 +57,12 @@ class CLIP(nn.Module):
         image_features = self.image_encoder(images)
         return self.image_projection(image_features)
 
-    def extract_text_features(self, input_ids: torch.Tensor, attention_mask: torch.Tensor):
+    def extract_text_features(
+        self, input_ids: torch.Tensor, attention_mask: torch.Tensor
+    ):
         text_features = self.text_encoder(input_ids, attention_mask)
         return self.text_projection(text_features)
-    
+
     def get_feature_size(self, encoder: nn.Module):
         """Get the feature size from the encoder using a dummy input."""
         encoder.eval()
@@ -63,13 +70,13 @@ class CLIP(nn.Module):
         with torch.no_grad():
             output = encoder(dummy_input)
         return output.shape[1]
-    
+
     def criterion_contrastive_loss(self, logits: torch.Tensor):
         targets = torch.arange(logits.size(0)).to(logits.device)
         loss_images = F.cross_entropy(logits, targets)
         loss_texts = F.cross_entropy(logits.t(), targets)
         return (loss_images + loss_texts) / 2
-        
+
     def criterion_siglip_loss(self, logits: torch.Tensor):
         n = logits.size(0)
         # -1 --> off-diagonals
