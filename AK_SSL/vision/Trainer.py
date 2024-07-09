@@ -68,7 +68,7 @@ class Trainer:
         self.num_workers = os.cpu_count()
 
         if self.verbose:
-            print("----------------AK_SSL----------------")
+            print("----------------AK_SSL: Vision----------------")
             print("Number of workers:", self.num_workers)
             print("Device:", self.device)
             print("--------------------------------------")
@@ -220,7 +220,7 @@ class Trainer:
                     print("Transformation local: SimCLRViewTransform")
 
             case _:
-                raise Exception("Method not found.")
+                raise ValueError(f"Method {self.method} not supported")
 
         if self.verbose:
             print("--------------------------------------")
