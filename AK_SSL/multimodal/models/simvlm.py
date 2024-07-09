@@ -35,7 +35,7 @@ class ResBlock(nn.Sequential):
 
 class SimVLM(nn.Module):
     """
-    CLIP: SimVLM: Simple Visual Language Model Pretraining with Weak Supervision
+    SimVLM: Simple Visual Language Model Pretraining with Weak Supervision
     Link: https://arxiv.org/abs/2108.10904
     Implementation: https://github.com/YulongBonjour/SimVLM
     """

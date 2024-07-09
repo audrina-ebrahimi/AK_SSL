@@ -11,7 +11,7 @@ from torch import nn
 from apex.normalization.fused_layer_norm import FusedLayerNorm
 
 
-class UniterTextEmbeddings(nn.Module):
+class UNITERTextEmbeddings(nn.Module):
     def __init__(
         self,
         vocab_size: int,
@@ -49,7 +49,7 @@ class UniterTextEmbeddings(nn.Module):
         return embeddings
 
 
-class UniterImageEmbeddings(nn.Module):
+class UNITERImageEmbeddings(nn.Module):
     def __init__(
         self, img_dim: int, hidden_size: int = 768, hidden_dropout_prob: float = 0.1
     ):
@@ -84,7 +84,7 @@ class UniterImageEmbeddings(nn.Module):
         return embeddings
 
 
-class UniterModel(nn.Module):
+class UNITER(nn.Module):
     """
     UNITER: UNiversal Image-TExt Representation Learning
     Link: https://arxiv.org/pdf/1909.11740
@@ -136,14 +136,14 @@ class UniterModel(nn.Module):
         self.type_vocab_size = type_vocab_size
         self.initializer_range = initializer_range
 
-        self.text_embeddings = UniterTextEmbeddings(
+        self.text_embeddings = UNITERTextEmbeddings(
             self.vocab_size,
             self.hidden_size,
             self.max_position_embeddings,
             self.type_vocab_size,
             self.hidden_dropout_prob,
         )
-        self.image_embeddings = UniterImageEmbeddings(
+        self.image_embeddings = UNITERImageEmbeddings(
             self, img_dim, self.hidden_size, self.hidden_dropout_prob
         )
         self.apply(self.init_weights)

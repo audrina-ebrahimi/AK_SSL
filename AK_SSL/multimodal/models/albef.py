@@ -23,7 +23,7 @@ ALBEFOutput = namedtuple(
 )
 
 
-class ALBEFModel(nn.Module):
+class ALBEF(nn.Module):
     """
     ALBEF: ALign the image and text representations BEfore Fusing
     Link: https://arxiv.org/pdf/2107.07651.pdf
