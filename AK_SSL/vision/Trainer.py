@@ -28,7 +28,7 @@ class Trainer:
         reload_checkpoint: bool = False,
         verbose: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """
         Description:
             Trainer class to train the model with self-supervised methods.
@@ -303,18 +303,24 @@ class Trainer:
         match optimizer.lower():
             case "adam":
                 optimizer = torch.optim.Adam(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case "sgd":
                 optimizer = torch.optim.SGD(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case "adamw":
                 optimizer = torch.optim.AdamW(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case _:
-                raise Exception("Optimizer not found.")
+                raise ValueError(f"Optimizer {optimizer} not supported")
 
         train_loader = torch.utils.data.DataLoader(
             self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
@@ -533,6 +539,6 @@ class Trainer:
             if self.verbose:
                 print(f"Starting Epoch: {epoch}")
         else:
-            raise Exception("Epoch not found in file name.")
+            raise ValueError("No epoch number found in the checkpoint name.")
 
         return epoch
