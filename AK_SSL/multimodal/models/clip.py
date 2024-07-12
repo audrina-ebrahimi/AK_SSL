@@ -13,38 +13,49 @@ class CLIP(nn.Module):
 
     def __init__(
         self,
-        vision_model: nn.Module,
-        transformer_model: nn.Module,
-        vision_feature_dim: int = 0,
-        transformer_feature_dim: int = 768,
+        image_encoder: nn.Module,
+        text_encoder: nn.Module,
+        image_feature_dim: int = 0,
+        text_feature_dim: int = 768,
         embed_dim: int = 256,
         init_tau: float = np.log(1.0),
-        init_b: float = 0.0,
+        init_bias: float = 0.0,
+        use_siglip: bool = False,
     ):
+        """
+        Initialize the CLIP model.
+        Args:
+            image_encoder (nn.Module): Vision encoder model
+            text_encoder (nn.Module): Text encoder model
+            image_feature_dim (int): Dimension of the image features
+            text_feature_dim (int): Dimension of the text features
+            embed_dim (int): Dimension of the embeddings
+            init_tau (float): Initial value of tau
+            init_b (float): Initial value of b
+        """
         super(CLIP, self).__init__()
 
-        if not vision_feature_dim:
-            vision_feature_dim = self.get_feature_size(vision_model)
+        if not image_feature_dim:
+            image_feature_dim = self.get_feature_size(image_encoder)
 
-        self.vision_model = vision_model
-        self.transformer_model = transformer_model
+        self.vision_model = image_encoder
+        self.transformer_model = text_encoder
+        self.use_siglip = use_siglip
 
         self.image_projection = torch.nn.Sequential(
-            torch.nn.Linear(vision_feature_dim, vision_feature_dim, bias=False),
+            torch.nn.Linear(image_feature_dim, image_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(vision_feature_dim, embed_dim, bias=False),
+            torch.nn.Linear(image_feature_dim, embed_dim, bias=False),
         )
 
         self.text_projection = torch.nn.Sequential(
-            torch.nn.Linear(
-                transformer_feature_dim, transformer_feature_dim, bias=False
-            ),
+            torch.nn.Linear(text_feature_dim, text_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(transformer_feature_dim, embed_dim, bias=False),
+            torch.nn.Linear(text_feature_dim, embed_dim, bias=False),
         )
 
         self.t_prime = nn.Parameter(torch.ones([]) * init_tau)
-        self.b = nn.Parameter(torch.ones([]) * init_b)
+        self.b = nn.Parameter(torch.ones([]) * init_bias)
 
     def forward(
         self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor

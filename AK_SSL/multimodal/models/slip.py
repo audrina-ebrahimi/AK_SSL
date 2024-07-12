@@ -19,10 +19,10 @@ class SLIP(nn.Module):
         super(SLIP, self).__init__()
 
         self.clip = CLIP(
-            vision_model=vision_model,
-            transformer_model=transformer_model,
-            vision_feature_dim=vision_feature_dim,
-            transformer_feature_dim=transformer_feature_dim,
+            image_encoder=vision_model,
+            text_encoder=transformer_model,
+            image_feature_dim=vision_feature_dim,
+            text_feature_dim=transformer_feature_dim,
             embed_dim=embed_dim,
         )
 
