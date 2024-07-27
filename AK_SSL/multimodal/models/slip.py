@@ -7,6 +7,12 @@ from AK_SSL.vision.models.modules.transformations import SimCLRViewTransform
 
 
 class SLIP(nn.Module):
+    """
+    SLIP: Self-supervision meets Language-Image Pre-training
+    Link: https://arxiv.org/abs/2112.12750
+    Implementation: https://github.com/facebookresearch/SLIP
+    """
+
     def __init__(
         self,
         vision_model: nn.Module,
@@ -16,6 +22,15 @@ class SLIP(nn.Module):
         transformer_feature_dim: int = 768,
         embed_dim: int = 256,
     ) -> None:
+        """
+        Args:
+            vision_model (nn.Module): Vision encoder model
+            transformer_model (nn.Module): Transformer encoder model
+            mlp_dim (int, optional): Dimension of the MLP. Defaults to 4096.
+            vision_feature_dim (int, optional): Dimension of the vision features. Defaults to 0.
+            transformer_feature_dim (int, optional): Dimension of the transformer features. Defaults to 768.
+            embed_dim (int, optional): Dimension of the embeddings. Defaults to 256.
+        """
         super(SLIP, self).__init__()
 
         self.clip = CLIP(
@@ -36,25 +51,25 @@ class SLIP(nn.Module):
             nn.Linear(mlp_dim, embed_dim),
         )
 
-    def forward(self, image: torch.Tensor, text: torch.Tensor) -> dict:
+    def forward(
+        self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor
+    ) -> dict:
         augmented_image_1 = SimCLRViewTransform(image)
         augmented_image_2 = SimCLRViewTransform(image)
 
         aug1_embed = self.vision_mlp(self.clip.vision_model(augmented_image_1))
         aug2_embed = self.vision_mlp(self.clip.vision_model(augmented_image_2))
 
-        image_embed = self.clip.extract_image_features(image)
-        text_embed = self.clip.extract_text_features(text)
+        clip_output = self.clip(image, input_ids, attention_mask)
 
         return {
-            "image_embed": image_embed,
-            "text_embed": text_embed,
             "aug1_embed": aug1_embed,
             "aug2_embed": aug2_embed,
+            "clip_output": clip_output,
             "logit_scale": self.logit_scale.exp(),
         }
 
     def criterion(
-        self, ssl_temp: float, ssl_loss: torch.Tensor, clip_loss
+        self, ssl_scale: float, ssl_loss: torch.Tensor, clip_loss: torch.Tensor
     ) -> torch.Tensor:
-        return ssl_temp * ssl_loss + clip_loss
+        return ssl_scale * ssl_loss + clip_loss

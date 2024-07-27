@@ -6,9 +6,8 @@ from tqdm.auto import tqdm
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 
-import transformers
-
 from AK_SSL.multimodal.models import *
+from AK_SSL.vision.models.modules.losses.nt_xent import NT_Xent
 
 
 class Trainer:
@@ -18,7 +17,7 @@ class Trainer:
         image_encoder: nn.Module,
         text_encoder: nn.Module,
         tokenizer,
-        use_16bit_precision: bool = False,
+        mixed_precision_training: bool = True,
         save_dir: str = ".",
         checkpoint_interval: int = 10,
         reload_checkpoint: bool = False,
@@ -31,7 +30,7 @@ class Trainer:
         self.reload_checkpoint = reload_checkpoint
         self.verbose = verbose
         self.tokenizer = tokenizer
-        self.use_16bit_precision = use_16bit_precision
+        self.mixed_precision_training = mixed_precision_training
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -97,7 +96,7 @@ class Trainer:
         for step, (batch) in enumerate(train_loader):
             batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
 
-            with torch.cuda.amp.autocast(enabled=self.use_16bit_precision):
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 logits = self.model(**batch)
                 if self.model.use_siglip:
                     loss = self.model.criterion_siglip_loss(logits)
@@ -113,7 +112,30 @@ class Trainer:
             train_loader.set_postfix(loss=loss.item(), temp=self.model.t_prime.exp().item(), bias=self.model.b.item(), lr=optimizer.param_groups[0]['lr'])
 
         return epoch_loss
-                
+
+    def _train_slip(self, train_loader, optimizer, scaler):
+        epoch_loss = 0.0
+        for step, (batch) in enumerate(train_loader):
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
+
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                logits = self.model(**batch)
+                ssl_loss = NT_Xent(temperature=0.1)
+                ssl_loss = ssl_loss(logits['aug1_embed'], logits['aug2_embed'])
+                clip_loss = self.model.clip.criterion_contrastive_loss(logits['clip_output'])
+
+                loss = self.model.criterion(ssl_scale=1.0, ssl_loss=ssl_loss, clip_loss=clip_loss)
+
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            epoch_loss += loss.item()
+            train_loader.set_postfix(loss=loss.item(), temp=self.model.t_prime.exp().item(), bias=self.model.b.item(), lr=optimizer.param_groups[0]['lr'])
+
+        return epoch_loss            
+    
     def train(
         self,
         train_dataset: torch.utils.data.Dataset,
@@ -159,19 +181,37 @@ class Trainer:
             num_workers=self.num_workers,
         )
 
-        scaler = torch.cuda.amp.GradScaler(enabled=self.use_16bit_precision)
+        scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
         self.model.train()
 
         match self.method.lower():
             case "clip":
 
                 tmax = number_of_epochs * len(train_loader) + len(train_loader) // 4
-                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, tmax, eta_min=1e-8)
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=tmax, eta_min=1e-8)
 
                 for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="CLIP Training", leave=True,):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
                         loss_per_epoch = self._train_clip(train_loader, optimizer, scaler)
+                        lr_scheduler.step()
+
+                    self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
+                    self.writer.flush()
+                    if (epoch + 1) % self.checkpoint_interval == 0:
+                        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
+                        )
+                        torch.save(self.model.state_dict(), model_path)
+
+            case "slip":
+                tmax = number_of_epochs * len(train_loader) + len(train_loader) // 4
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=tmax, eta_min=1e-5)
+
+                for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="SLIP Training", leave=True,):
+                    with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                        tepoch.set_description(f"Epoch {epoch + 1}")
+                        loss_per_epoch = self._train_slip(train_loader, optimizer, scaler)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
@@ -187,10 +227,7 @@ class Trainer:
             
             case "simvlm":
                 raise NotImplementedError("Training for SimVLM is not implemented yet.")
-            
-            case "slip":
-                raise NotImplementedError("Training for SLIP is not implemented yet.")
-            
+                        
             case "uniter":
                 raise NotImplementedError("Training for UNITER is not implemented yet.")
             
