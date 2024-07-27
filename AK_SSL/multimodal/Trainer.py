@@ -134,7 +134,24 @@ class Trainer:
             epoch_loss += loss.item()
             train_loader.set_postfix(loss=loss.item(), temp=self.model.t_prime.exp().item(), bias=self.model.b.item(), lr=optimizer.param_groups[0]['lr'])
 
-        return epoch_loss            
+        return epoch_loss
+
+    def _train_simvlm(self, train_loader, optimizer, scaler):
+        epoch_loss = 0.0
+        for step, (batch) in enumerate(train_loader):
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
+
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                logits, labels = self.model(**batch)
+                loss = self.model.criterion(logits, labels)
+
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            epoch_loss += loss.item()
+            train_loader.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]['lr'])            
     
     def train(
         self,
@@ -186,7 +203,6 @@ class Trainer:
 
         match self.method.lower():
             case "clip":
-
                 tmax = number_of_epochs * len(train_loader) + len(train_loader) // 4
                 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=tmax, eta_min=1e-8)
 
@@ -226,7 +242,21 @@ class Trainer:
                 raise NotImplementedError("Training for ALBEF is not implemented yet.")
             
             case "simvlm":
-                raise NotImplementedError("Training for SimVLM is not implemented yet.")
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=2000)
+
+                for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="SimVLM Training", leave=True,):
+                    with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                        tepoch.set_description(f"Epoch {epoch + 1}")
+                        loss_per_epoch = self._train_simvlm(train_loader, optimizer, scaler)
+                        lr_scheduler.step()
+
+                    self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
+                    self.writer.flush()
+                    if (epoch + 1) % self.checkpoint_interval == 0:
+                        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
+                        )
+                        torch.save(self.model.state_dict(), model_path)
                         
             case "uniter":
                 raise NotImplementedError("Training for UNITER is not implemented yet.")
