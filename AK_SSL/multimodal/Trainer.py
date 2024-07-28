@@ -1,10 +1,12 @@
 import os
 import re
+import numpy as np
 import torch
 import torch.nn as nn
 from tqdm.auto import tqdm
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn.utils.clip_grad import clip_grad_norm_
 
 from AK_SSL.multimodal.models import *
 from AK_SSL.vision.models.modules.losses.nt_xent import NT_Xent
@@ -151,7 +153,31 @@ class Trainer:
             scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]['lr'])            
+            train_loader.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]['lr'])
+
+        return epoch_loss
+    
+    def _train_vse(self, train_loader, optimizer, scaler):
+        epoch_loss = 0.0
+        num_negs = []
+        for step, (batch) in enumerate(train_loader):
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
+
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                img_emb, txt_emb, txt_lens = self.model(**batch)
+                loss, tmp_num_negs = self.model.conterastive_loss(img_emb, txt_emb, txt_lens)
+                num_negs.extend(tmp_num_negs)
+
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            clip_grad_norm_(self.model.enc_params, 2.0)
+            scaler.step(optimizer)
+            scaler.update()
+
+            epoch_loss += loss.item()
+            train_loader.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
+
+        return epoch_loss
     
     def train(
         self,
@@ -262,7 +288,18 @@ class Trainer:
                 raise NotImplementedError("Training for UNITER is not implemented yet.")
             
             case "vse":
-                raise NotImplementedError("Training for VSE is not implemented yet.")
+                for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="VSE Training", leave=True,):
+                    with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                        tepoch.set_description(f"Epoch {epoch + 1}")
+                        loss_per_epoch = self._train_vse(train_loader, optimizer, scaler)
+
+                    self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
+                    self.writer.flush()
+                    if (epoch + 1) % self.checkpoint_interval == 0:
+                        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
+                        )
+                        torch.save(self.model.state_dict(), model_path)
 
             case _:
                 raise ValueError(f"Method {self.method} not supported")

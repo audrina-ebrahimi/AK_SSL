@@ -8,6 +8,12 @@ from torch.autograd import Variable
 
 
 class VSE(nn.Module):
+    """
+    VSE: Improving Visual-Semantic Embedding with Adaptive Pooling and Optimization Objective
+    Link: https://arxiv.org/abs/2210.02206v1
+    Implementation: https://github.com/96-Zachary/vse_2ad
+    """
+
     def __init__(
         self, vision_encoder: nn.Module, text_encoder: nn.Module, margin: float = 0.2
     ):
