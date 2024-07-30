@@ -141,7 +141,7 @@ class Trainer:
     def _train_simvlm(self, train_loader, optimizer, scaler):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
-            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['text', 'image']}
 
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 logits, labels = self.model(**batch)
@@ -161,7 +161,7 @@ class Trainer:
         epoch_loss = 0.0
         num_negs = []
         for step, (batch) in enumerate(train_loader):
-            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['input_ids', 'attention_mask', 'image']}
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['image', 'image_lengths', 'text', 'text_lengths']}
 
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 img_emb, txt_emb, txt_lens = self.model(**batch)
@@ -178,7 +178,22 @@ class Trainer:
             train_loader.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
 
         return epoch_loss
-    
+
+    def _train__train_unitervqa(self, train_loader, optimizer, scaler):
+        epoch_loss = 0.0
+        for step, (batch) in enumerate(train_loader):
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                logits = self.model(**batch)
+                loss = self.model.criterion(batch['targets'], logits)
+            
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            epoch_loss += loss.item()
+            train_loader.set_postfix(loss=loss.item(), temp=self.model.t_prime.exp().item(), bias=self.model.b.item(), lr=optimizer.param_groups[0]['lr'])
+
     def train(
         self,
         train_dataset: torch.utils.data.Dataset,
@@ -284,8 +299,19 @@ class Trainer:
                         )
                         torch.save(self.model.state_dict(), model_path)
                         
-            case "uniter":
-                raise NotImplementedError("Training for UNITER is not implemented yet.")
+            case "uniter_vqa":
+                for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="Uniter For VQA Training", leave=True,):
+                    with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                        tepoch.set_description(f"Epoch {epoch + 1}")
+                        loss_per_epoch = self._train_unitervqa(train_loader, optimizer, scaler)
+
+                    self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
+                    self.writer.flush()
+                    if (epoch + 1) % self.checkpoint_interval == 0:
+                        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
+                        )
+                        torch.save(self.model.state_dict(), model_path)
             
             case "vse":
                 for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="VSE Training", leave=True,):

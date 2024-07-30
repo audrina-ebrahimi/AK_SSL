@@ -5,8 +5,8 @@ from typing import Optional
 from collections import namedtuple
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from torch import nn, Tensor
 
 
 ALBEFOutput = namedtuple(
@@ -36,9 +36,9 @@ class ALBEF(nn.Module):
         momentum (float): Momentum parameter. Default is 0.995.
 
     Inputs:
-        image (Tensor): Tensor of shape (B, C, H, W) containing image features.
-        text (Tensor): Tensor of shape (B, L) containing text features.
-        text_atts (Tensor): Tensor of shape (B, L) containing text attention mask.
+        image (torch.Tensor): torch.Tensor of shape (B, C, H, W) containing image features.
+        text (torch.Tensor): torch.Tensor of shape (B, L) containing text features.
+        text_atts (torch.Tensor): torch.Tensor of shape (B, L) containing text attention mask.
     """
 
     def __init__(
@@ -63,15 +63,15 @@ class ALBEF(nn.Module):
 
     def forward(
         self,
-        image: Tensor,
-        text: Tensor,
-        text_atts: Tensor,
+        image: torch.Tensor,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
     ) -> ALBEFOutput:
         image_embeds = self.vision_encoder(image)
-        text_embeds = self.text_encoder(text, text_atts)
+        text_embeds = self.text_encoder(input_ids, attention_mask)
         multimodal_embeddings = self.multimodal_encoder(
             hidden_states=text_embeds.last_hidden_state,
-            attention_mask=text_atts,
+            attention_mask=attention_mask,
             encoder_hidden_states=image_embeds,
         )
 
@@ -84,10 +84,10 @@ class ALBEF(nn.Module):
                 self.multimodal_encoder, self.multimodal_encoder_m, self.momentum
             )
             image_embeds_m = self.vision_encoder_m(image)
-            text_embeds_m = self.text_encoder_m(text, text_atts)
+            text_embeds_m = self.text_encoder_m(input_ids, attention_mask)
             multimodal_embeddings_m = self.multimodal_encoder_m(
                 hidden_states=text_embeds_m.last_hidden_state,
-                attention_mask=text_atts,
+                attention_mask=attention_mask,
                 encoder_hidden_states=image_embeds_m,
             )
 
@@ -114,20 +114,20 @@ class ALBEF(nn.Module):
 
     def image_text_contrastive_loss(
         self,
-        image_to_text_sim: Tensor,
-        text_to_image_sim: Tensor,
-        image_to_text_sim_m: Optional[Tensor] = None,
-        text_to_image_sim_m: Optional[Tensor] = None,
-        sim_targets: Optional[Tensor] = None,
+        image_to_text_sim: torch.Tensor,
+        text_to_image_sim: torch.Tensor,
+        image_to_text_sim_m: Optional[torch.Tensor] = None,
+        text_to_image_sim_m: Optional[torch.Tensor] = None,
+        sim_targets: Optional[torch.Tensor] = None,
         alpha: Optional[float] = 0.0,
-    ) -> Tensor:
+    ) -> torch.Tensor:
         """
         Inputs:
-            image_to_text_sim (Tensor): Image to text similarity.
-            text_to_image_sim (Tensor): Text to image similarity.
-            image_to_text_sim_m (Optional[Tensor]): Image to text similarity from momentum models. (Required if alpha is non-zero.)
-            text_to_image_sim_m (Optional[Tensor]): Text to image similarity from momentum models. (Required if alpha is non-zero.)
-            sim_targets (Optional[Tensor]): Similarity pseudo-targets from momentum models. Default is the diagonal matrix. (Requires all Tensor inputs to have the same size.)
+            image_to_text_sim (torch.Tensor): Image to text similarity.
+            text_to_image_sim (torch.Tensor): Text to image similarity.
+            image_to_text_sim_m (Optional[torch.Tensor]): Image to text similarity from momentum models. (Required if alpha is non-zero.)
+            text_to_image_sim_m (Optional[torch.Tensor]): Text to image similarity from momentum models. (Required if alpha is non-zero.)
+            sim_targets (Optional[torch.Tensor]): Similarity pseudo-targets from momentum models. Default is the diagonal matrix. (Requires all torch.Tensor inputs to have the same size.)
             alpha (Optional[float]): The interpolation value of momentum similarity and sim_targets. (Default is 0.)
         """
 
@@ -167,18 +167,18 @@ class ALBEF(nn.Module):
 
     def causal_language_modeling_loss(
         self,
-        labels: Tensor,
-        prediction_scores: Tensor,
-        prediction_scores_m: Optional[Tensor] = None,
+        labels: torch.Tensor,
+        prediction_scores: torch.Tensor,
+        prediction_scores_m: Optional[torch.Tensor] = None,
         mask_token_id: int = -100,
         alpha: Optional[float] = 0.0,
-    ) -> Tensor:
+    ) -> torch.Tensor:
         """
         Inputs:
             mask_token_id (int): The token id indicating a masked token. Default is -100.
-            labels (Tensor of shape (batch_size, seq_length)): The masked output tokens.
-            prediction_scores (Tensor of shape (batch_size, seq_length, vocab_size)): The prediction scores from a prediction head.
-            prediction_scores_m (Optional[Tensor] of shape (batch_size, seq_length, vocab_size)): The prediction scores from a momentum prediction head.(Required if alpha is non-zero.)
+            labels (torch.Tensor of shape (batch_size, seq_length)): The masked output tokens.
+            prediction_scores (torch.Tensor of shape (batch_size, seq_length, vocab_size)): The prediction scores from a prediction head.
+            prediction_scores_m (Optional[torch.Tensor] of shape (batch_size, seq_length, vocab_size)): The prediction scores from a momentum prediction head.(Required if alpha is non-zero.)
             alpha (float): The interpolation value between mlm_loss and loss_distill. (Default is 0.)
         """
 

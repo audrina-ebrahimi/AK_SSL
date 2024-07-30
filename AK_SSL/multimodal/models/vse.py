@@ -33,18 +33,18 @@ class VSE(nn.Module):
 
     def forward(
         self,
-        img: torch.Tensor,
-        img_lengths: torch.Tensor,
-        txt: torch.Tensor,
-        txt_lengths: torch.Tensor,
+        image: torch.Tensor,
+        image_lengths: torch.Tensor,
+        text: torch.Tensor,
+        text_lengths: torch.Tensor,
     ):
         # img = [batch_size, n_region, img_dim]
         # txt = [batch_size, seq_len]
 
         # img_emb = [batch_size, n_region, emb_size]
         # txt_emb  = [batch_size, seq_len, emb_size]
-        img_emb = self.vision_encoder(img, img_lengths)
-        txt_emb, txt_lens = self.text_encoder(txt, txt_lengths)
+        img_emb = self.vision_encoder(image, image_lengths)
+        txt_emb, txt_lens = self.text_encoder(text, text_lengths)
 
         return img_emb, txt_emb, txt_lens
 

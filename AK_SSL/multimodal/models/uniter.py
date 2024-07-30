@@ -8,6 +8,7 @@ some classes are modified from HuggingFace
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from apex.normalization.fused_layer_norm import FusedLayerNorm
 
 
@@ -84,7 +85,7 @@ class UNITERImageEmbeddings(nn.Module):
         return embeddings
 
 
-class UNITER(nn.Module):
+class UNITERForVQA(nn.Module):
     """
     UNITER: UNiversal Image-TExt Representation Learning
     Link: https://arxiv.org/pdf/1909.11740
@@ -110,6 +111,7 @@ class UNITER(nn.Module):
         pooler: nn.Module,
         encoder: nn.Module,
         vocab_size: int,
+        num_answer: int,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 12,
@@ -146,6 +148,14 @@ class UNITER(nn.Module):
         self.image_embeddings = UNITERImageEmbeddings(
             self, img_dim, self.hidden_size, self.hidden_dropout_prob
         )
+
+        self.vqa_output = nn.Sequential(
+            nn.Linear(self.hidden_size, self.hidden_size * 2),
+            nn.GELU(),
+            FusedLayerNorm(self.hidden_size * 2, eps=1e-12),
+            nn.Linear(self.hidden_size * 2, num_answer),
+        )
+
         self.apply(self.init_weights)
 
     def _compute_txt_embeddings(
@@ -257,4 +267,13 @@ class UNITER(nn.Module):
         )
         if not output_all_encoded_layers:
             encoded_layers = encoded_layers[-1]
-        return encoded_layers
+
+        pooled_output = self.uniter.pooler(encoded_layers)
+        answer_scores = self.vqa_output(pooled_output)
+        return answer_scores
+
+    def criterion(self, targets, answer_scores):
+        vqa_loss = F.binary_cross_entropy_with_logits(
+            answer_scores, targets, reduction="none"
+        )
+        return vqa_loss
