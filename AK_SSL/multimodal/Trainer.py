@@ -178,6 +178,28 @@ class Trainer:
             train_loader.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
 
         return epoch_loss
+    
+    def _train_albef(self, train_loader, optimizer, scaler, epoch):
+        epoch_loss = 0.0
+        for step, (batch) in enumerate(train_loader):
+            batch = {k: v.to(self.device) for k, v in batch.items() if k in ['text', 'image']}
+            if epoch > 0:
+                alpha = self.model.alpha
+            else:
+                alpha = self.model.alpha * min(1, step / len(train_loader))
+            with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                loss_mlm, loss_ita, loss_itm = self.model(text=batch['text'], image=batch['image'], alpha=alpha)
+                loss = loss_mlm + loss_ita + loss_itm
+
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            epoch_loss += loss.item()
+            train_loader.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]['lr'])
+
+        return epoch_loss
 
     def _train__train_unitervqa(self, train_loader, optimizer, scaler):
         epoch_loss = 0.0
@@ -280,7 +302,22 @@ class Trainer:
                         torch.save(self.model.state_dict(), model_path)
             
             case "albef":
-                raise NotImplementedError("Training for ALBEF is not implemented yet.")
+                tmax = number_of_epochs * len(train_loader) + len(train_loader) // 4
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=tmax, eta_min=1e-5)
+
+                for epoch in tqdm(range(start_epoch - 1, epochs), unit="epoch", desc="ALBEF Training", leave=True,):
+                    with tqdm(train_loader, unit="batch", leave=False) as tepoch:
+                        tepoch.set_description(f"Epoch {epoch + 1}")
+                        loss_per_epoch = self._train_albef(train_loader, optimizer, scaler, epoch)
+                        lr_scheduler.step()
+
+                    self.writer.add_scalar(f"{self.method.upper()}/Train/Loss", loss_per_epoch / len(train_loader), epoch + 1)
+                    self.writer.flush()
+                    if (epoch + 1) % self.checkpoint_interval == 0:
+                        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
+                        )
+                        torch.save(self.model.state_dict(), model_path)
             
             case "simvlm":
                 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=2000)

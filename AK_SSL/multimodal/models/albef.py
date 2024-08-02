@@ -21,7 +21,7 @@ class ALBEF(nn.Module):
     Args:
         vision_encoder (nn.Module): Instantiated vision encoder.
         text_encoder (nn.Module): Instantiated text encoder.
-        mlm_probability (nn.Module): Masked language modeling probability. Default is 0.15.
+        mlm_probability (float): Masked language modeling probability. Default is 0.15.
         embed_dim (int): Embedding dimension. Default is 768.
         vision_width (int): Vision encoder output width. Default is 256.
         temp (float): Temperature parameter. Default is 0.07.
@@ -41,6 +41,7 @@ class ALBEF(nn.Module):
         temp: float = 0.07,
         queue_size: int = 1024,
         momentum: float = 0.9,
+        alpha: float = 0.4,
     ):
         super().__init__()
 
@@ -52,6 +53,7 @@ class ALBEF(nn.Module):
         self.temp = nn.Parameter(torch.ones([]) * temp)
         self.queue_size = queue_size
         self.momentum = momentum
+        self.alpha = alpha
         self.itm_head = nn.Linear(self.text_width, 2)
 
         self.vision_width = vision_width

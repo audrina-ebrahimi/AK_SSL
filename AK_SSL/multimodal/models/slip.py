@@ -15,8 +15,8 @@ class SLIP(nn.Module):
 
     def __init__(
         self,
-        vision_model: nn.Module,
-        transformer_model: nn.Module,
+        image_encoder: nn.Module,
+        text_encoder: nn.Module,
         mlp_dim: int = 4096,
         vision_feature_dim: int = 0,
         transformer_feature_dim: int = 768,
@@ -24,8 +24,8 @@ class SLIP(nn.Module):
     ) -> None:
         """
         Args:
-            vision_model (nn.Module): Vision encoder model
-            transformer_model (nn.Module): Transformer encoder model
+            image_encoder (nn.Module): Vision encoder model
+            text_encoder (nn.Module): Transformer encoder model
             mlp_dim (int, optional): Dimension of the MLP. Defaults to 4096.
             vision_feature_dim (int, optional): Dimension of the vision features. Defaults to 0.
             transformer_feature_dim (int, optional): Dimension of the transformer features. Defaults to 768.
@@ -34,8 +34,8 @@ class SLIP(nn.Module):
         super(SLIP, self).__init__()
 
         self.clip = CLIP(
-            image_encoder=vision_model,
-            text_encoder=transformer_model,
+            image_encoder=image_encoder,
+            text_encoder=text_encoder,
             image_feature_dim=vision_feature_dim,
             text_feature_dim=transformer_feature_dim,
             embed_dim=embed_dim,
