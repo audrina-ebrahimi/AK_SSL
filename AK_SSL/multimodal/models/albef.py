@@ -41,6 +41,7 @@ class ALBEF(nn.Module):
         temp: float = 0.07,
         queue_size: int = 1024,
         momentum: float = 0.9,
+        alpha: float = 0.4,
     ):
         super().__init__()
 
@@ -52,6 +53,7 @@ class ALBEF(nn.Module):
         self.temp = nn.Parameter(torch.ones([]) * temp)
         self.queue_size = queue_size
         self.momentum = momentum
+        self.alpha = alpha
         self.itm_head = nn.Linear(self.text_width, 2)
 
         self.vision_width = vision_width
