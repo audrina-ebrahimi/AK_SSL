@@ -21,7 +21,7 @@ class ALBEF(nn.Module):
     Args:
         vision_encoder (nn.Module): Instantiated vision encoder.
         text_encoder (nn.Module): Instantiated text encoder.
-        mlm_probability (nn.Module): Masked language modeling probability. Default is 0.15.
+        mlm_probability (float): Masked language modeling probability. Default is 0.15.
         embed_dim (int): Embedding dimension. Default is 768.
         vision_width (int): Vision encoder output width. Default is 256.
         temp (float): Temperature parameter. Default is 0.07.
