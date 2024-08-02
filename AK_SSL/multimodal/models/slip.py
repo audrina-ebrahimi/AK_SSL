@@ -57,8 +57,8 @@ class SLIP(nn.Module):
         augmented_image_1 = SimCLRViewTransform(image)
         augmented_image_2 = SimCLRViewTransform(image)
 
-        aug1_embed = self.vision_mlp(self.clip.image_encoder(augmented_image_1))
-        aug2_embed = self.vision_mlp(self.clip.image_encoder(augmented_image_2))
+        aug1_embed = self.vision_mlp(self.clip.vision_model(augmented_image_1))
+        aug2_embed = self.vision_mlp(self.clip.vision_model(augmented_image_2))
 
         clip_output = self.clip(image, input_ids, attention_mask)
 
