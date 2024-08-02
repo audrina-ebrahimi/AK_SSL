@@ -244,13 +244,15 @@ We strongly recommend that you install AK_SSL in a dedicated virtualenv, to avoi
 
 Using AK_SSL, you have the flexibility to leverage the most recent self-supervised learning techniques seamlessly, harnessing the complete capabilities of PyTorch. You can explore diverse backbones, models, and optimizer while benefiting from a user-friendly framework that has been purposefully crafted for ease of use.
 
+
+### Initializing the Trainer for Vision Models
+
 You can easily import Trainer module from AK_SSL library and start utilizing it right away.
 
 ```python
-from AK_SSL import Trainer
+from AK_SSL.vision import Trainer
 ```
 
-### Initializing the Trainer
 Now, let's initialize the self-supervised trainer with our chosen method, backbone, dataset, and other configurations.
 
 ```python
@@ -396,6 +398,98 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
       temperature             # a float to control the temperature for the contrastive loss function
     ```
 
+  </details>
+
+
+### Initializing the Trainer for Multimodal Models
+
+You can easily import Trainer module from AK_SSL library and start utilizing it right away.
+
+```python
+from AK_SSL.multimodal import Trainer
+```
+
+Now, let's initialize the self-supervised trainer with our chosen method, backbone, dataset, and other configurations.
+
+```python
+trainer = Trainer(
+    method="clip",                  # training method as string (CLIP, ALBEF, SLIP, SimVLM, UNITER, VSE)
+    image_encoder=backbone,              
+    text_encoder=feature_size,      
+    tokenizer=
+    mixed_precision_training=
+    save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
+    checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
+    reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
+    verbose=True,                   # enable verbose output for training progress as a boolean
+    **kwargs                        # other arguments 
+)
+```
+Note: The use of **kwargs can differ between methods, depending on the specific method, loss function, transformation, and other factors. If you are utilizing any of the objectives listed below, you must provide their arguments during the initialization of the Trainer class.
+
+- <details><summary>CLIP</summary>
+  
+  ```
+    image_feature_dim         # Dimension of the image features as integer
+    text_feature_dim          # Dimension of the text features as integer
+    embed_dim                 # Dimension of the embeddings as integer
+    init_tau                  # Initial value of tau as float
+    init_b                    # Initial value of b as float
+  ```
+  
+  </details>
+
+
+  - <details><summary>ALBEF</summary>
+  
+  ```
+    mlm_probability           # Masked language modeling probability as float
+    embed_dim                 # Dimension of the embeddings as integer
+    vision_width              # Vision encoder output width as integer
+    temp                      # Temperature parameter as float
+    queue_size                # Queue size as integer
+    momentum                  # Momentum parameter as float
+  ```
+  
+  </details>
+
+
+  - <details><summary>SimVLM</summary>
+  
+  ```
+    mlm_probability           # 
+  ```
+  
+  </details>
+
+
+  - <details><summary>SLIP</summary>
+  
+  ```
+    mlp_dim                   # Dimension of the MLP as integer
+    vision_feature_dim        # Dimension of the vision features as integer
+    transformer_feature_dim   # Dimension of the transformer features as integer
+    embed_dim                 # Dimension of the embeddings as integer
+  ```
+  
+  </details>
+
+
+  - <details><summary>UNITER</summary>
+  
+  ```
+    mlm_probability           # 
+  ```
+  
+  </details>
+
+
+  - <details><summary>VSE</summary>
+  
+  ```
+    margin                   # Margin for contrastive loss as float
+  ```
+  
   </details>
 
 
