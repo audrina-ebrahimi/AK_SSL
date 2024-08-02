@@ -12,6 +12,11 @@ class VSE(nn.Module):
     VSE: Improving Visual-Semantic Embedding with Adaptive Pooling and Optimization Objective
     Link: https://arxiv.org/abs/2210.02206v1
     Implementation: https://github.com/96-Zachary/vse_2ad
+
+    Args:
+        vision_encoder (nn.Module): Vision encoder
+        text_encoder (nn.Module): Text encoder
+        margin (float): Margin for contrastive loss
     """
 
     def __init__(
