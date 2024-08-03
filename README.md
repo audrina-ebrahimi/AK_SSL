@@ -414,10 +414,9 @@ Now, let's initialize the self-supervised trainer with our chosen method, backbo
 ```python
 trainer = Trainer(
     method="clip",                  # training method as string (CLIP, ALBEF, SLIP, SimVLM, UNITER, VSE)
-    image_encoder=backbone,              
-    text_encoder=feature_size,      
-    tokenizer=
-    mixed_precision_training=
+    image_encoder=img_encoder,      # vision model to extract image features as nn.Module
+    text_encoder=txt_encoder,       # text model to extract text features as nn.Module
+    mixed_precision_training=True,  # whether to use mixed precision training or not as boolean
     save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
     checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
     reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
