@@ -12,79 +12,6 @@ from torch.nn import functional as F
 from apex.normalization.fused_layer_norm import FusedLayerNorm
 
 
-class UNITERTextEmbeddings(nn.Module):
-    def __init__(
-        self,
-        vocab_size: int,
-        hidden_size: int = 768,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
-        hidden_dropout_prob: float = 0.1,
-    ):
-        super().__init__()
-        self.word_embeddings = nn.Embedding(vocab_size, hidden_size, padding_idx=0)
-        self.position_embeddings = nn.Embedding(max_position_embeddings, hidden_size)
-        self.token_type_embeddings = nn.Embedding(type_vocab_size, hidden_size)
-
-        # self.LayerNorm is not snake-cased to stick with TensorFlow model
-        # variable name and be able to load any TensorFlow checkpoint file
-        self.LayerNorm = FusedLayerNorm(hidden_size, eps=1e-12)
-        self.dropout = nn.Dropout(hidden_dropout_prob)
-
-    def forward(
-        self,
-        input_ids: torch.Tensor,
-        position_ids: torch.Tensor,
-        token_type_ids: torch.Tensor = None,
-    ):
-        if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
-
-        words_embeddings = self.word_embeddings(input_ids)
-        position_embeddings = self.position_embeddings(position_ids)
-        token_type_embeddings = self.token_type_embeddings(token_type_ids)
-
-        embeddings = words_embeddings + position_embeddings + token_type_embeddings
-        embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
-
-
-class UNITERImageEmbeddings(nn.Module):
-    def __init__(
-        self, img_dim: int, hidden_size: int = 768, hidden_dropout_prob: float = 0.1
-    ):
-        super().__init__()
-        self.img_linear = nn.Linear(img_dim, hidden_size)
-        self.img_layer_norm = FusedLayerNorm(hidden_size, eps=1e-12)
-        self.pos_layer_norm = FusedLayerNorm(hidden_size, eps=1e-12)
-        self.pos_linear = nn.Linear(7, hidden_size)
-        self.mask_embedding = nn.Embedding(2, img_dim, padding_idx=0)
-
-        # tf naming convention for layer norm
-        self.LayerNorm = FusedLayerNorm(hidden_size, eps=1e-12)
-        self.dropout = nn.Dropout(hidden_dropout_prob)
-
-    def forward(
-        self,
-        img_feat: torch.Tensor,
-        img_pos_feat: torch.Tensor,
-        type_embeddings: torch.Tensor,
-        img_masks: torch.Tensor = None,
-    ):
-        if img_masks is not None:
-            self.mask_embedding.weight.data[0, :].fill_(0)
-            mask = self.mask_embedding(img_masks.long())
-            img_feat = img_feat + mask
-
-        transformed_im = self.img_layer_norm(self.img_linear(img_feat))
-        transformed_pos = self.pos_layer_norm(self.pos_linear(img_pos_feat))
-        embeddings = transformed_im + transformed_pos + type_embeddings
-        embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
-
-
 class UNITERForVQA(nn.Module):
     """
     UNITER: UNiversal Image-TExt Representation Learning
@@ -92,62 +19,36 @@ class UNITERForVQA(nn.Module):
     Implementation: https://github.com/ChenRocks/UNITER
 
     Args:
-        vocab_size_or_config_json_file: Vocabulary size of `inputs_ids`.
-        hidden_size: Size of the encoder layers and the pooler layer.
-        num_hidden_layers: Number of hidden layers in the Transformer encoder.
-        num_attention_heads: Number of attention heads for each attention layer in the Transformer encoder.
-        intermediate_size: The size of the "intermediate" (i.e. feed-forward) layer in the Transformer encoder.
-        hidden_act: The non-linear activation function (function or string) in the encoder and pooler. If string, "gelu", "relu" and "swish" are supported.
-        hidden_dropout_prob: The dropout probabilitiy for all fully connected layers in the embeddings, encoder, and pooler.
-        attention_probs_dropout_prob: The dropout ratio for the attention probabilities.
-        max_position_embeddings: The maximum sequence length that this model might ever be used with. Typically set this to something large just in case (e.g., 512 or 1024 or 2048).
-        type_vocab_size: The vocabulary size of the `token_type_ids`
-        initializer_range: The sttdev of the truncated_normal_initializer for initializing all weight matrices.
+        image_encoder (nn.Module): image encoder
+        text_encoder (nn.Module): text encoder
+        pooler (nn.Module): pooler
+        encoder (nn.Module): transformer encoder
+        num_answer (int): number of answer classes
+        hidden_size (int): hidden size
+        attention_probs_dropout_prob (float): dropout rate
+        initializer_range (float): initializer range
     """
 
     def __init__(
         self,
-        img_dim: int,
+        image_encoder: nn.Module,
+        text_encoder: nn.Module,
         pooler: nn.Module,
         encoder: nn.Module,
-        vocab_size: int,
         num_answer: int,
         hidden_size: int = 768,
-        num_hidden_layers: int = 12,
-        num_attention_heads: int = 12,
-        intermediate_size: int = 3072,
-        hidden_act: str = "gelu",
-        hidden_dropout_prob: float = 0.1,
         attention_probs_dropout_prob: float = 0.1,
-        max_position_embeddings: int = 512,
-        type_vocab_size: int = 2,
         initializer_range: float = 0.02,
     ):
         super().__init__()
         self.pooler = pooler
         self.encoder = encoder
-        self.vocab_size = vocab_size
         self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.hidden_act = hidden_act
-        self.intermediate_size = intermediate_size
-        self.hidden_dropout_prob = hidden_dropout_prob
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
-        self.max_position_embeddings = max_position_embeddings
-        self.type_vocab_size = type_vocab_size
         self.initializer_range = initializer_range
 
-        self.text_embeddings = UNITERTextEmbeddings(
-            self.vocab_size,
-            self.hidden_size,
-            self.max_position_embeddings,
-            self.type_vocab_size,
-            self.hidden_dropout_prob,
-        )
-        self.image_embeddings = UNITERImageEmbeddings(
-            self, img_dim, self.hidden_size, self.hidden_dropout_prob
-        )
+        self.text_embeddings = text_encoder
+        self.image_embeddings = image_encoder
 
         self.vqa_output = nn.Sequential(
             nn.Linear(self.hidden_size, self.hidden_size * 2),

@@ -18,7 +18,6 @@ class Trainer:
         method: str,
         image_encoder: nn.Module,
         text_encoder: nn.Module,
-        tokenizer,
         mixed_precision_training: bool = True,
         save_dir: str = ".",
         checkpoint_interval: int = 10,
