@@ -47,7 +47,6 @@ class Trainer:
         self.checkpoint_interval = checkpoint_interval
         self.reload_checkpoint = reload_checkpoint
         self.verbose = verbose
-        self.tokenizer = tokenizer
         self.mixed_precision_training = mixed_precision_training
 
         self.save_dir = save_dir + f"/{self.method}/"
