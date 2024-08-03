@@ -38,6 +38,22 @@ class SimVLM(nn.Module):
     SimVLM: Simple Visual Language Model Pretraining with Weak Supervision
     Link: https://arxiv.org/abs/2108.10904
     Implementation: https://github.com/YulongBonjour/SimVLM
+
+    Args:
+        transformer_encoder (nn.Module): Transformer encoder for vision and text embeddings
+        transformer_decoder (nn.Module): Transformer decoder for embeddings
+        vocab_size (int, optional): Size of the vocabulary. Defaults to 10000.
+        feature_dim (int, optional): Dimension of the features. Defaults to 512.
+        max_seq_len (int, optional): Maximum sequence length. Defaults to 60.
+        max_trunc_txt_len (int, optional): Maximum truncated text length. Defaults to 15.
+        prefix_txt_len (int, optional): Prefix text length. Defaults to 20.
+        target_txt_len (int, optional): Target text length. Defaults to 60.
+        pad_idx (int, optional): Padding index. Defaults to 0.
+        image_resolution (int, optional): Image resolution. Defaults to 224.
+        patch_size (int, optional): Patch size. Defaults to 16.
+        num_channels (int, optional): Number of channels. Defaults to 3.
+
+    
     """
 
     def __init__(
