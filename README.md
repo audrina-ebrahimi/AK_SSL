@@ -457,7 +457,18 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   - <details><summary>SimVLM</summary>
   
   ```
-    mlm_probability           # 
+    transformer_encoder       # Transformer encoder for vision and text embeddings as nn.Module
+    transformer_decoder       # Transformer decoder for embeddings as nn.Module
+    vocab_size                # Size of the vocabulary as integer
+    feature_dim               # Dimension of the features as integer
+    max_seq_len               # Maximum sequence length as integer
+    max_trunc_txt_len         # Maximum truncated text length as integer
+    prefix_txt_len            # Prefix text length as integer
+    target_txt_len            # Target text length as integer
+    pad_idx                   # Padding index as integer
+    image_resolution          # Image resolution as integer
+    patch_size                # Patch size as integer
+    num_channels              # Number of channels as integer
   ```
   
   </details>
@@ -478,7 +489,12 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   - <details><summary>UNITER</summary>
   
   ```
-    mlm_probability           # 
+    pooler                          # pooler as nn.Module
+    encoder                         # transformer encoder as nn.Module
+    num_answer                      # number of answer classes as integer
+    hidden_size                     # hidden size as integer
+    attention_probs_dropout_prob    # dropout rate as float
+    initializer_range               # initializer range as float
   ```
   
   </details>
@@ -493,7 +509,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-### Training the Self-Supervised Model
+### Training the Self-Supervised Model for Vision Models
 
 Then, we'll train the self-supervised model using the specified parameters.
 
@@ -508,8 +524,24 @@ Then, we'll train the self-supervised model using the specified parameters.
 )
 ```
 
+### Training the Self-Supervised Model for Multimodal Models
 
-### Evaluating th Self-Supervised Model
+Then, we'll train the self-supervised model using the specified parameters.
+
+```python
+  trainer.train(
+      train_dataset,           # the training data set as torch.utils.data.Dataset             
+      batch_size=256,          # the number of training examples used in each iteration as integer
+      start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
+      epochs=100,              # the total number of training epochs as integer
+      optimizer="Adam",        # the optimization algorithm used for training as string (Adam, SGD, or AdamW)
+      weight_decay=1e-6,       # a regularization term to prevent overfitting by penalizing large weights as float
+      learning_rate=1e-3,      # the learning rate for the optimizer as float
+)
+```
+
+
+### Evaluating the Vision Self-Supervised Models
 This evaluation assesses how well the pre-trained model performs on a dataset, specifically for tasks related to linear evaluation.
 ```python
 trainer.evaluate(
@@ -526,7 +558,7 @@ trainer.evaluate(
 )
 ```
 
-### Get the Self-Supervised Model backbone
+### Get the Vision Self-Supervised Models backbone
 
 In case you want to use the pre-trained network in your own downstream task, you need to define a downstream task model. This model should include the self-supervised model backbone as one of its components. Here's an example of how to define a simple downstream model class:
 
