@@ -440,7 +440,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-  - <details><summary>ALBEF</summary>
+- <details><summary>ALBEF</summary>
   
   ```
     mlm_probability           # Masked language modeling probability as float
@@ -454,7 +454,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-  - <details><summary>SimVLM</summary>
+- <details><summary>SimVLM</summary>
   
   ```
     transformer_encoder       # Transformer encoder for vision and text embeddings as nn.Module
@@ -474,7 +474,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-  - <details><summary>SLIP</summary>
+- <details><summary>SLIP</summary>
   
   ```
     mlp_dim                   # Dimension of the MLP as integer
@@ -486,7 +486,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-  - <details><summary>UNITER</summary>
+- <details><summary>UNITER</summary>
   
   ```
     pooler                          # pooler as nn.Module
@@ -500,7 +500,7 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-  - <details><summary>VSE</summary>
+- <details><summary>VSE</summary>
   
   ```
     margin                   # Margin for contrastive loss as float
