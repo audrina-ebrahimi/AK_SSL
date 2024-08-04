@@ -13,6 +13,7 @@ from AK_SSL.vision.models.modules.losses.nt_xent import NT_Xent
 
 
 class Trainer:
+
     def __init__(
         self,
         method: str,
@@ -25,12 +26,27 @@ class Trainer:
         verbose: bool = True,
         **kwargs,
     ) -> None:
+        
+        '''
+        Description:
+            Trainer class to train the model with self-supervised methods.
+
+        Args:
+            method (str): Method to train the model. Options: ["CLIP", "ALBEF", "SimVLM", "SLIP", "UNITER", "VSE"]
+            image_encoder (nn.Module): Vision model to extract image features.
+            text_encoder (nn.Module): Text model to extract text features.
+            mixed_precision_training (bool): Whether to use mixed precision training or not.
+            save_dir (str): Directory to save the model checkpoints.
+            checkpoint_interval (int): Interval to save the model checkpoints.
+            reload_checkpoint (bool): Whether to reload the latest checkpoint or not.
+            verbose (bool): Whether to print the logs or not.
+            **kwargs: Additional arguments for the models.
+        '''
 
         self.method = method
         self.checkpoint_interval = checkpoint_interval
         self.reload_checkpoint = reload_checkpoint
         self.verbose = verbose
-        self.tokenizer = tokenizer
         self.mixed_precision_training = mixed_precision_training
 
         self.save_dir = save_dir + f"/{self.method}/"
