@@ -9,8 +9,8 @@ from AK_SSL.vision.models.modules.transformations import SimCLRViewTransform
 class SLIP(nn.Module):
     """
     SLIP: Self-supervision meets Language-Image Pre-training
-    Link: https://arxiv.org/abs/2112.12750
-    Implementation: https://github.com/facebookresearch/SLIP
+    Paper Link: https://arxiv.org/abs/2112.12750
+    Implementation Link: https://github.com/facebookresearch/SLIP
     """
 
     def __init__(
@@ -18,31 +18,35 @@ class SLIP(nn.Module):
         image_encoder: nn.Module,
         text_encoder: nn.Module,
         mlp_dim: int = 4096,
-        vision_feature_dim: int = 0,
-        transformer_feature_dim: int = 768,
+        image_feature_dim: int = 0,
+        text_feature_dim: int = 768,
         embed_dim: int = 256,
     ) -> None:
         """
+        Initialize the SLIP model.
+
         Args:
-            image_encoder (nn.Module): Vision encoder model
-            text_encoder (nn.Module): Transformer encoder model
-            mlp_dim (int, optional): Dimension of the MLP. Defaults to 4096.
-            vision_feature_dim (int, optional): Dimension of the vision features. Defaults to 0.
-            transformer_feature_dim (int, optional): Dimension of the transformer features. Defaults to 768.
-            embed_dim (int, optional): Dimension of the embeddings. Defaults to 256.
+            image_encoder (nn.Module): Neural network to encode images
+            text_encoder (nn.Module): Neural network to encode text
+            mlp_dim (int): Dimension of the hidden layer in the MLP. (default: 4096)
+            image_feature_dim (int): Dimensionality of image features (default: 0, will be determined later)
+            text_feature_dim (int): Dimensionality of text features (default: 768)
+            embed_dim (int): Dimensionality of the joint embedding space (default: 256)
         """
         super(SLIP, self).__init__()
 
+        # Initialize the CLIP model with the given encoders and dimensions
         self.clip = CLIP(
             image_encoder=image_encoder,
             text_encoder=text_encoder,
-            image_feature_dim=vision_feature_dim,
-            text_feature_dim=transformer_feature_dim,
+            image_feature_dim=image_feature_dim,
+            text_feature_dim=text_feature_dim,
             embed_dim=embed_dim,
         )
 
+        # Define the vision MLP for feature transformation and projection
         self.vision_mlp = nn.Sequential(
-            nn.Linear(vision_feature_dim, mlp_dim),
+            nn.Linear(image_feature_dim, mlp_dim),
             nn.SyncBatchNorm(mlp_dim),
             nn.ReLU(inplace=True),
             nn.Linear(mlp_dim, mlp_dim),
@@ -54,12 +58,16 @@ class SLIP(nn.Module):
     def forward(
         self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor
     ) -> dict:
+
+        # Apply SimCLR transformation to the image twice to get two augmented views
         augmented_image_1 = SimCLRViewTransform(image)
         augmented_image_2 = SimCLRViewTransform(image)
 
-        aug1_embed = self.vision_mlp(self.clip.vision_model(augmented_image_1))
-        aug2_embed = self.vision_mlp(self.clip.vision_model(augmented_image_2))
+        # Pass the augmented images through the vision MLP
+        aug1_embed = self.vision_mlp(self.clip.image_encoder(augmented_image_1))
+        aug2_embed = self.vision_mlp(self.clip.image_encoder(augmented_image_2))
 
+        # Get the CLIP model's output for the original image and text inputs
         clip_output = self.clip(image, input_ids, attention_mask)
 
         return {
