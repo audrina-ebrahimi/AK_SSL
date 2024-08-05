@@ -14,38 +14,47 @@ from copy import deepcopy
 
 class ALBEF(nn.Module):
     """
-    ALBEF: ALign the image and text representations BEfore Fusing
-    Link: https://arxiv.org/pdf/2107.07651.pdf
-    Implementation: https://github.com/salesforce/ALBEF
-
-    Args:
-        vision_encoder (nn.Module): Instantiated vision encoder.
-        text_encoder (nn.Module): Instantiated text encoder.
-        mlm_probability (float): Masked language modeling probability. Default is 0.15.
-        embed_dim (int): Embedding dimension. Default is 768.
-        vision_width (int): Vision encoder output width. Default is 256.
-        temp (float): Temperature parameter. Default is 0.07.
-        queue_size (int): Queue size. Default is 1024.
-        momentum (float): Momentum parameter. Default is 0.9.
-
-
+    ALBEF: Align before Fuse: Vision and Language Representation Learning with Momentum Distillation
+    Paper Link: https://arxiv.org/abs/2107.07651
+    Implementation Link: https://github.com/salesforce/ALBEF
     """
 
     def __init__(
         self,
-        vision_encoder: nn.Module = None,
+        image_encoder: nn.Module = None,
         text_encoder: nn.Module = None,
         mlm_probability: float = 0.15,
         embed_dim: int = 768,
-        vision_width: int = 256,
+        image_feature_dim: int = 0,
+        text_feature_dim: int = 768,
         temp: float = 0.07,
         queue_size: int = 1024,
         momentum: float = 0.9,
         alpha: float = 0.4,
     ):
+        """
+        Initializes the ALBEF model with the given parameters.
+
+        Args:
+            image_encoder (nn.Module): Neural network to encode images
+            text_encoder (nn.Module): Neural network to encode text
+            mlm_probability (float): Probability for masked language modeling. (default: 0.15)
+            embed_dim (int): Dimension of the joint embedding space. (default: 768)
+            image_feature_dim (int): Dimensionality of image features (default: 0, will be determined later)
+            text_feature_dim (int): Dimensionality of text features (default: 768)
+            temp (float): Temperature for softmax normalization. (default: 0.07)
+            queue_size (int): Size of the queue for momentum distillation. (default: 1024)
+            momentum (float): Momentum for updating the momentum models. (default: 0.9)
+            alpha (float): Weight for the momentum distillation target. (default: 0.4)
+        """
         super().__init__()
 
-        self.visual_encoder = vision_encoder
+        # Determine image feature dimensionality if not provided
+        if not image_feature_dim:
+            image_feature_dim = self.get_feature_size(image_encoder)
+
+        # Initialize the image and text encoders
+        self.image_encoder = image_encoder
         self.text_encoder = text_encoder
 
         self.mlm_probability = mlm_probability
@@ -56,20 +65,22 @@ class ALBEF(nn.Module):
         self.alpha = alpha
         self.itm_head = nn.Linear(self.text_width, 2)
 
-        self.vision_width = vision_width
-        self.text_width = self.text_encoder.config.hidden_size
+        self.vision_width = image_feature_dim
+        self.text_width = text_feature_dim
+
+        # Projection layers to align vision and text features to the same embedding dimension
         self.vision_proj = nn.Linear(self.vision_width, self.embed_dim)
         self.text_proj = nn.Linear(self.text_width, self.embed_dim)
 
-        # create momentum models
-        self.visual_encoder_m = deepcopy(self.visual_encoder)
+        # Create momentum models for vision and text encoders and projection layers
+        self.visual_encoder_m = deepcopy(self.image_encoder)
         self.vision_proj_m = nn.Linear(self.vision_width, self.embed_dim)
 
         self.text_encoder_m = deepcopy(self.text_encoder)
         self.text_proj_m = nn.Linear(self.text_width, self.embed_dim)
 
         self.model_pairs = [
-            [self.visual_encoder, self.visual_encoder_m],
+            [self.image_encoder, self.visual_encoder_m],
             [self.vision_proj, self.vision_proj_m],
             [self.text_encoder, self.text_encoder_m],
             [self.text_proj, self.text_proj_m],
@@ -77,7 +88,7 @@ class ALBEF(nn.Module):
 
         self.copy_params()
 
-        # create the queue
+        # Initialize the queue for momentum features
         self.register_buffer(
             "image_queue", torch.randn(self.embed_dim, self.queue_size)
         )
@@ -87,29 +98,33 @@ class ALBEF(nn.Module):
         self.image_queue = nn.functional.normalize(self.image_queue, dim=0)
         self.text_queue = nn.functional.normalize(self.text_queue, dim=0)
 
-    def forward(self, image: torch.Tensor, text: torch.Tensor, alpha: float = 0):
+    def forward(
+        self,
+        image: torch.Tensor,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        alpha: float = 0,
+    ):
         with torch.no_grad():
-            self.temp.clamp_(0.001, 0.5)
+            self.temp.clamp_(0.001, 0.5)  # Clamp temperature value
 
-        image_embeds = self.visual_encoder(image)
+        # Extract image and text features
+        image_embeds = self.image_encoder(image)
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
         )
 
         image_feat = F.normalize(self.vision_proj(image_embeds[:, 0, :]), dim=-1)
 
-        text_output = self.text_encoder.bert(
-            text.input_ids,
-            attention_mask=text.attention_mask,
-            return_dict=True,
-            mode="text",
+        text_output = self.text_encoder(
+            input_ids, attention_mask=attention_mask, return_dict=True, mode="text"
         )
         text_embeds = text_output.last_hidden_state
         text_feat = F.normalize(self.text_proj(text_embeds[:, 0, :]), dim=-1)
 
-        # get momentum features
+        # Get momentum features
         with torch.no_grad():
-            self._momentum_update()
+            self._momentum_update()  # Update momentum encoders
             image_embeds_m = self.visual_encoder_m(image)
             image_feat_m = F.normalize(
                 self.vision_proj_m(image_embeds_m[:, 0, :]), dim=-1
@@ -117,11 +132,8 @@ class ALBEF(nn.Module):
             image_feat_all = torch.cat(
                 [image_feat_m.t(), self.image_queue.clone().detach()], dim=1
             )
-            text_output_m = self.text_encoder_m.bert(
-                text.input_ids,
-                attention_mask=text.attention_mask,
-                return_dict=True,
-                mode="text",
+            text_output_m = self.text_encoder_m(
+                input_ids, attention_mask, return_dict=True, mode="text"
             )
             text_feat_m = F.normalize(
                 self.text_proj_m(text_output_m.last_hidden_state[:, 0, :]), dim=-1
@@ -130,12 +142,14 @@ class ALBEF(nn.Module):
                 [text_feat_m.t(), self.text_queue.clone().detach()], dim=1
             )
 
+            # Compute similarity for momentum features
             sim_i2t_m = image_feat_m @ text_feat_all / self.temp
             sim_t2i_m = text_feat_m @ image_feat_all / self.temp
 
             sim_targets = torch.zeros(sim_i2t_m.size()).to(image.device)
             sim_targets.fill_diagonal_(1)
 
+            # Compute soft targets
             sim_i2t_targets = (
                 alpha * F.softmax(sim_i2t_m, dim=1) + (1 - alpha) * sim_targets
             )
@@ -143,9 +157,11 @@ class ALBEF(nn.Module):
                 alpha * F.softmax(sim_t2i_m, dim=1) + (1 - alpha) * sim_targets
             )
 
+        # Compute similarity for current features
         sim_i2t = image_feat @ text_feat_all / self.temp
         sim_t2i = text_feat @ image_feat_all / self.temp
 
+        # Calculate contrastive loss
         loss_i2t = -torch.sum(
             F.log_softmax(sim_i2t, dim=1) * sim_i2t_targets, dim=1
         ).mean()
@@ -157,10 +173,10 @@ class ALBEF(nn.Module):
 
         self._dequeue_and_enqueue(image_feat_m, text_feat_m)
 
-        # forward the positve image-text pair
-        output_pos = self.text_encoder.bert(
+        # Forward the positive image-text pair
+        output_pos = self.text_encoder(
             encoder_embeds=text_embeds,
-            attention_mask=text.attention_mask,
+            attention_mask=attention_mask,
             encoder_hidden_states=image_embeds,
             encoder_attention_mask=image_atts,
             return_dict=True,
@@ -174,25 +190,25 @@ class ALBEF(nn.Module):
             weights_i2t.fill_diagonal_(0)
             weights_t2i.fill_diagonal_(0)
 
-        # select a negative image for each text
+        # Select a negative image for each text
         image_embeds_neg = []
         for b in range(bs):
             neg_idx = torch.multinomial(weights_t2i[b], 1).item()
             image_embeds_neg.append(image_embeds[neg_idx])
         image_embeds_neg = torch.stack(image_embeds_neg, dim=0)
 
-        # select a negative text for each image
+        # Select a negative text for each image
         text_embeds_neg = []
         text_atts_neg = []
         for b in range(bs):
             neg_idx = torch.multinomial(weights_i2t[b], 1).item()
             text_embeds_neg.append(text_embeds[neg_idx])
-            text_atts_neg.append(text.attention_mask[neg_idx])
+            text_atts_neg.append(attention_mask[neg_idx])
         text_embeds_neg = torch.stack(text_embeds_neg, dim=0)
         text_atts_neg = torch.stack(text_atts_neg, dim=0)
 
         text_embeds_all = torch.cat([text_embeds, text_embeds_neg], dim=0)
-        text_atts_all = torch.cat([text.attention_mask, text_atts_neg], dim=0)
+        text_atts_all = torch.cat([attention_mask, text_atts_neg], dim=0)
 
         image_embeds_all = torch.cat([image_embeds_neg, image_embeds], dim=0)
         image_atts_all = torch.cat([image_atts, image_atts], dim=0)
@@ -206,6 +222,7 @@ class ALBEF(nn.Module):
             mode="fusion",
         )
 
+        # Compute the final vision-language embeddings
         vl_embeddings = torch.cat(
             [
                 output_pos.last_hidden_state[:, 0, :],
@@ -221,8 +238,8 @@ class ALBEF(nn.Module):
         ).to(image.device)
         loss_itm = F.cross_entropy(vl_output, itm_labels)
 
-        # MLM
-        input_ids = text.input_ids.clone()
+        # Masked Language Modeling (MLM) task
+        input_ids = input_ids.clone()
         labels = input_ids.clone()
 
         probability_matrix = torch.full(labels.shape, self.mlm_probability)
@@ -237,7 +254,7 @@ class ALBEF(nn.Module):
         with torch.no_grad():
             logits_m = self.text_encoder_m(
                 input_ids,
-                attention_mask=text.attention_mask,
+                attention_mask=attention_mask,
                 encoder_hidden_states=image_embeds_m,
                 encoder_attention_mask=image_atts,
                 return_dict=True,
@@ -245,7 +262,7 @@ class ALBEF(nn.Module):
             )
         mlm_output = self.text_encoder(
             input_ids,
-            attention_mask=text.attention_mask,
+            attention_mask=attention_mask,
             encoder_hidden_states=image_embeds,
             encoder_attention_mask=image_atts,
             return_dict=True,
@@ -259,15 +276,23 @@ class ALBEF(nn.Module):
 
     @torch.no_grad()
     def copy_params(self):
+        """
+        Copies parameters from the main model to the momentum model.
+        """
         for model_pair in self.model_pairs:
             for param, param_m in zip(
                 model_pair[0].parameters(), model_pair[1].parameters()
             ):
-                param_m.data.copy_(param.data)  # initialize
-                param_m.requires_grad = False  # not update by gradient
+                param_m.data.copy_(param.data)  # Initialize momentum model
+                param_m.requires_grad = (
+                    False  #  Do not update momentum model by gradient
+                )
 
     @torch.no_grad()
     def _momentum_update(self):
+        """
+        Updates the momentum model parameters.
+        """
         for model_pair in self.model_pairs:
             for param, param_m in zip(
                 model_pair[0].parameters(), model_pair[1].parameters()
@@ -278,21 +303,33 @@ class ALBEF(nn.Module):
 
     @torch.no_grad()
     def _dequeue_and_enqueue(self, image_feat, text_feat):
-        # gather keys before updating queue
+        """
+        Dequeue the oldest batch and enqueue the current batch for the image and text queues.
+        """
+        # Gather keys before updating queue
         image_feats = concat_all_gather(image_feat)
         text_feats = concat_all_gather(text_feat)
 
         batch_size = image_feats.shape[0]
 
         ptr = int(self.queue_ptr)
-        assert self.queue_size % batch_size == 0  # for simplicity
+        assert (
+            self.queue_size % batch_size == 0
+        )  # For simplicity, ensure queue size is divisible by batch size
 
-        # replace the keys at ptr (dequeue and enqueue)
+        # Replace the keys at ptr (dequeue and enqueue)
         self.image_queue[:, ptr : ptr + batch_size] = image_feats.T
         self.text_queue[:, ptr : ptr + batch_size] = text_feats.T
-        ptr = (ptr + batch_size) % self.queue_size  # move pointer
+        ptr = (ptr + batch_size) % self.queue_size  # Move pointer
 
         self.queue_ptr[0] = ptr
+
+    def get_feature_size(self, encoder: nn.Module):
+        encoder.eval()
+        dummy_input = torch.randn(1, 3, 32, 32)  # Create a dummy input for the encoder
+        with torch.no_grad():
+            output = encoder(dummy_input)  # Get the output features from the encoder
+        return output.shape[1]  # Return the dimensionality of the output features
 
 
 @torch.no_grad()
