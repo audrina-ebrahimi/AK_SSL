@@ -36,24 +36,8 @@ class ResBlock(nn.Sequential):
 class SimVLM(nn.Module):
     """
     SimVLM: Simple Visual Language Model Pretraining with Weak Supervision
-    Link: https://arxiv.org/abs/2108.10904
-    Implementation: https://github.com/YulongBonjour/SimVLM
-
-    Args:
-        transformer_encoder (nn.Module): Transformer encoder for vision and text embeddings
-        transformer_decoder (nn.Module): Transformer decoder for embeddings
-        vocab_size (int, optional): Size of the vocabulary. Defaults to 10000.
-        feature_dim (int, optional): Dimension of the features. Defaults to 512.
-        max_seq_len (int, optional): Maximum sequence length. Defaults to 60.
-        max_trunc_txt_len (int, optional): Maximum truncated text length. Defaults to 15.
-        prefix_txt_len (int, optional): Prefix text length. Defaults to 20.
-        target_txt_len (int, optional): Target text length. Defaults to 60.
-        pad_idx (int, optional): Padding index. Defaults to 0.
-        image_resolution (int, optional): Image resolution. Defaults to 224.
-        patch_size (int, optional): Patch size. Defaults to 16.
-        num_channels (int, optional): Number of channels. Defaults to 3.
-
-    
+    Paper Link: https://arxiv.org/abs/2108.10904
+    Implementation Link: https://github.com/YulongBonjour/SimVLM
     """
 
     def __init__(
@@ -71,7 +55,23 @@ class SimVLM(nn.Module):
         patch_size: int = 16,
         num_channels: int = 3,
     ) -> None:
+        """
+        Initialize the SimVLM model.
 
+        Args:
+            transformer_encoder (nn.Module): The transformer encoder.
+            transformer_decoder (nn.Module): The transformer decoder.
+            vocab_size (int, optional): The size of the vocabulary. Defaults to 10000.
+            feature_dim (int, optional): The dimension of the features. Defaults to 512.
+            max_seq_len (int, optional): The maximum sequence length. Defaults to 60.
+            max_trunc_txt_len (int, optional): The maximum truncated text length. Defaults to 15.
+            prefix_txt_len (int, optional): The prefix text length. Defaults to 20.
+            target_txt_len (int, optional): The target text length. Defaults to 60.
+            pad_idx (int, optional): The padding index. Defaults to 0.
+            image_resolution (int, optional): The image resolution. Defaults to 224.
+            patch_size (int, optional): The patch size. Defaults to 16.
+            num_channels (int, optional): The number of channels. Defaults to 3.
+        """
         super(SimVLM, self).__init__()
 
         self.max_seq_len = max_seq_len
@@ -81,36 +81,52 @@ class SimVLM(nn.Module):
         self.feature_dim = feature_dim
         self.target_txt_len = target_txt_len
 
+        # Define word embedding and positional embedding layers for text
         self.word_embedding = nn.Embedding(vocab_size, feature_dim)
         self.pos_embedding = nn.Embedding(max_seq_len, feature_dim)
         image_feat_map_size = image_resolution // patch_size
         self.image_tokens_len = image_feat_map_size**2
+
+        # Define a patch embedding layer for image patches
         self.patch_embedding = AxialPositionalEmbedding(
             feature_dim, axial_shape=(image_feat_map_size, image_feat_map_size)
         )
+
+        # Define a ResBlock for image feature extraction
         self.ResBlock = ResBlock(
             in_channels=num_channels,
             out_channels=feature_dim,
             kernel_size=patch_size,
             stride=patch_size,
         )
+
+        # Define a sequence of normalization and linear layers to convert features to logits
         self.to_logits = nn.Sequential(
             nn.LayerNorm(feature_dim), nn.Linear(feature_dim, vocab_size)
         )
+
+        # Assign transformer encoder and decoder
         self.transformer_encoder = transformer_encoder
         self.transformer_decoder = transformer_decoder
+
+        # Define a parameter for the beginning of sequence embedding
         self.bos_emb = nn.Parameter(torch.randn(1, feature_dim))
 
+        # Initialize model parameters
         self._reset_parameters()
 
     def _reset_parameters(self):
-        r"""Initiate parameters in the transformer model."""
-
+        """
+        Initiate parameters in the transformer model.
+        """
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
     def generate_square_subsequent_mask(sz: int):
+        """
+        Generate a subsequent mask to prevent attending to future positions
+        """
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = (
             mask.float()
@@ -127,10 +143,12 @@ class SimVLM(nn.Module):
 
         device, n = text.device, text.shape[0]
 
+        # Extract image embeddings
         image_embeddings = self.ResBlock(image)
         image_embeddings = rearrange(image_embeddings, "b c h w -> b (h w) c")
         image_embeddings += self.patch_embedding(image_embeddings)
 
+        # Create key padding mask for attention
         key_padding_mask = torch.zeros(
             n,
             self.image_tokens_len + self.prefix_txt_len,
@@ -138,12 +156,15 @@ class SimVLM(nn.Module):
             device=device,
         )
 
+        # Embed text and add positional encodings
         text_embeddings = self.word_embedding(text) + self.pos_embedding(
             torch.arange(self.max_seq_len, device=device)
         )  # b n c
 
+        # Randomly truncate text length
         l = randint(0, self.max_trunc_txt_len)
 
+        # Create prefix text tensor with padding
         prefix_text = torch.zeros(
             (n, self.prefix_txt_len), device=device, dtype=torch.long
         )
@@ -151,21 +172,25 @@ class SimVLM(nn.Module):
         prefix_text[:, :l] = text[:, :l]
         key_padding_mask[:, self.image_tokens_len :] = prefix_text == self.pad_idx
 
+        # Create prefix text embeddings
         prefix_text_embeddings = torch.zeros(
             (n, self.prefix_txt_len, self.feature_dim), device=device
         )
         prefix_text_embeddings[:, :l] = text_embeddings[:, :l]
 
+        # Create target text embeddings
         target_text_embeddings = torch.zeros(
             (n, self.target_txt_len, self.feature_dim), device=device
         )
         target_text_embeddings[:, : (self.max_seq_len - l)] = text_embeddings[:, l:]
 
+        # Create labels for the target text
         labels = torch.zeros((n, self.target_txt_len), device=device, dtype=torch.long)
         labels[:, : (self.txt_seq_len - l)] = text[:, l:]
 
         del text, image
 
+        # Add beginning of sequence embedding to target text embeddings
         target_text_embeddings = torch.cat(
             [
                 torch.zeros(n, 1, self.feature_dim, device=device) + self.bos_emb,
@@ -173,6 +198,8 @@ class SimVLM(nn.Module):
             ],
             dim=1,
         )
+
+        # Concatenate image and prefix text embeddings
         prefix = torch.cat((image_embeddings, prefix_text_embeddings), dim=1)
 
         target_text_embeddings = rearrange(target_text_embeddings, "b n c -> n b c")
@@ -181,7 +208,10 @@ class SimVLM(nn.Module):
             device
         )
 
+        # Encode the prefix using the transformer encoder
         memory = self.encoder(prefix, mask=None, src_key_padding_mask=key_padding_mask)
+
+        # Decode the target text embeddings using the transformer decoder
         output = self.decoder(
             target_text_embeddings,
             memory,
@@ -190,10 +220,15 @@ class SimVLM(nn.Module):
             tgt_key_padding_mask=None,
             memory_key_padding_mask=key_padding_mask,
         )
+
+        # Convert the decoder output to logits
         logits = self.to_logits(output)  # seq_len, batch,vocab_size
         return logits, labels
 
     def criterion(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        """
+        Define the loss function (cross entropy with padding ignored)
+        """
         return F.cross_entropy(logits, labels, ignore_index=0)
 
     def generate(
@@ -209,14 +244,17 @@ class SimVLM(nn.Module):
         device = image.device
         n = image.shape[0]
 
+        # Extract image embeddings
         image_embeddings = self.ResBlock(image)
         image_embeddings = rearrange(image_embeddings, "b c h w -> b (h w) c")
         image_embeddings += self.patch_embedding(image_embeddings)
 
+        # Compute the length of the prefix text
         prefix_txt_len = (
             (prefix_text != self.pad_idx).sum(dim=-1).unsqueeze(-1)
         )  # [B,1]
 
+        # Create key padding mask for attention
         key_padding_mask = torch.zeros(
             n,
             self.image_tokens_len + self.prefix_txt_len,
@@ -226,15 +264,19 @@ class SimVLM(nn.Module):
 
         key_padding_mask[:, self.image_tokens_len :] = prefix_text == self.pad_idx
 
+        # Embed prefix text and add positional encodings
         prefix_text_embeddings = self.txt_embed(prefix_text) + self.txt_pos_embed(
             torch.arange(self.prefix_txt_len, device=device)
         )
 
+        # Concatenate image and prefix text embeddings
         prefix = torch.cat((image_embeddings, prefix_text_embeddings), dim=1)
         prefix = rearrange(prefix, "b n c -> n b c")
 
+        # Encode the prefix using the transformer encoder
         memory = self.encoder(prefix, mask=None, src_key_padding_mask=key_padding_mask)
 
+        # Perform sampling to generate captions
         if sampling_method == "nucleus":
             cap_tokens = self.nucleus_sampling(
                 memory,

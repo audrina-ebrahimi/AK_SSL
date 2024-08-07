@@ -10,31 +10,29 @@ from torch.autograd import Variable
 class VSE(nn.Module):
     """
     VSE: Improving Visual-Semantic Embedding with Adaptive Pooling and Optimization Objective
-    Link: https://arxiv.org/abs/2210.02206v1
-    Implementation: https://github.com/96-Zachary/vse_2ad
-
-    Args:
-        vision_encoder (nn.Module): Vision encoder
-        text_encoder (nn.Module): Text encoder
-        margin (float): Margin for contrastive loss
+    Paper Link: https://arxiv.org/abs/2210.02206v1
+    Implementation Link: https://github.com/96-Zachary/vse_2ad
     """
 
     def __init__(
-        self, vision_encoder: nn.Module, text_encoder: nn.Module, margin: float = 0.2
+        self, image_encoder: nn.Module, text_encoder: nn.Module, margin: float = 0.2
     ):
+        """
+        Initializes the VSE model.
+
+        Args:
+            image_encoder (nn.Module): The model to encode images.
+            text_encoder (nn.Module): The model to encode text.
+            margin (float): The margin used in loss functions (default: 0.2).
+        """
         super(VSE, self).__init__()
         self.margin = margin
-        self.vision_encoder = vision_encoder
+        self.image_encoder = image_encoder
         self.text_encoder = text_encoder
 
         self.txt_enc_params = list(self.text_encoder.parameters())
-        self.img_enc_params = list(self.vision_encoder.parameters())
+        self.img_enc_params = list(self.image_encoder.parameters())
         self.enc_params = self.img_enc_params + self.txt_enc_params
-
-    def make_data_parallel(self):
-        self.vision_encoder = nn.DataParallel(self.vision_encoder)
-        self.text_encoder = nn.DataParallel(self.text_encoder)
-        self.data_parallel = True
 
     def forward(
         self,
@@ -45,10 +43,10 @@ class VSE(nn.Module):
     ):
         # img = [batch_size, n_region, img_dim]
         # txt = [batch_size, seq_len]
-
         # img_emb = [batch_size, n_region, emb_size]
         # txt_emb  = [batch_size, seq_len, emb_size]
-        img_emb = self.vision_encoder(image, image_lengths)
+        # Encode images and texts
+        img_emb = self.image_encoder(image, image_lengths)
         txt_emb, txt_lens = self.text_encoder(text, text_lengths)
 
         return img_emb, txt_emb, txt_lens
@@ -78,6 +76,17 @@ class ContrastiveLoss(nn.Module):
         lamda: float = 0.01,
         acc_mode: str = "acc",
     ):
+        """
+        Initializes the contrastive loss function.
+
+        Args:
+            scale (float): Scaling factor for loss calculation.
+            const_num (int): Constant number of negatives.
+            margin (float): Margin for the loss.
+            device (str): Device to run the computations.
+            lamda (float): Regularization term (default: 0.01).
+            acc_mode (str): Mode to determine number of negatives (default: "acc").
+        """
         super(ContrastiveLoss, self).__init__()
         self.device = device
         self.lamda = lamda
@@ -160,6 +169,13 @@ class ContrastiveLoss(nn.Module):
 
 class TripletLoss(nn.Module):
     def __init__(self, margin: float = 0, max_violation: bool = False):
+        """
+        Initializes the triplet loss function.
+
+        Args:
+            margin (float): Margin for the loss.
+            max_violation (bool): If true, use the maximum violating negative for each query (default: False).
+        """
         super(TripletLoss, self).__init__()
         self.margin = margin
         self.max_violation = max_violation
