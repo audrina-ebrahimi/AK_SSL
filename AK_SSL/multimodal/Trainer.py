@@ -29,18 +29,26 @@ class Trainer:
         
         '''
         Description:
-            Trainer class to train the model with self-supervised methods.
+            Initializes the Trainer class for self-supervised training of vision-language models.
 
         Args:
-            method (str): Method to train the model. Options: ["CLIP", "ALBEF", "SimVLM", "SLIP", "UNITER", "VSE"]
-            image_encoder (nn.Module): Vision model to extract image features.
-            text_encoder (nn.Module): Text model to extract text features.
-            mixed_precision_training (bool): Whether to use mixed precision training or not.
-            save_dir (str): Directory to save the model checkpoints.
-            checkpoint_interval (int): Interval to save the model checkpoints.
-            reload_checkpoint (bool): Whether to reload the latest checkpoint or not.
-            verbose (bool): Whether to print the logs or not.
-            **kwargs: Additional arguments for the models.
+            method (str): The training method or framework to be used. 
+                          Options include ["CLIP", "ALBEF", "SimVLM", "SLIP", "UNITER", "VSE"].
+            image_encoder (nn.Module): The neural network module responsible for extracting features from images.
+            text_encoder (nn.Module): The neural network module responsible for extracting features from text.
+            mixed_precision_training (bool, optional): If True, enables mixed precision training to reduce memory usage 
+                                                       and potentially speed up training. Defaults to True.
+            save_dir (str, optional): The directory path where model checkpoints will be saved during training. 
+                                      Defaults to the current directory ("./").
+            checkpoint_interval (int, optional): The number of training epochs between saving model checkpoints. 
+                                                 Defaults to 10.
+            reload_checkpoint (bool, optional): If True, attempts to reload the most recent checkpoint from `save_dir` 
+                                                at the start of training, allowing continuation from a previous run. 
+                                                Defaults to False.
+            verbose (bool, optional): If True, enables detailed logging and progress information during training. 
+                                      Defaults to True.
+            **kwargs: Additional keyword arguments that can be passed to the image and text encoder models, 
+                      or used to customize the training process.
         '''
 
         self.method = method
@@ -102,6 +110,11 @@ class Trainer:
                 raise ValueError(f"Method {self.method} not supported")
 
         self.model = self.model.to(self.device)
+
+        if self.verbose:
+            print("Model parameters:", f"{np.sum([int(np.prod(p.shape)) for p in self.model.parameters()]):,}")
+            print("--------------------------------------")
+
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
 
