@@ -178,11 +178,12 @@ class Trainer:
 
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
 
     def __del__(self):
         self.writer.close()
 
-    def _train_clip(self, train_loader, optimizer, scaler):
+    def _train_clip(self, train_loader, optimizer):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
             batch = {
@@ -199,9 +200,9 @@ class Trainer:
                     loss = self.model.criterion_contrastive_loss(logits)
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(
@@ -213,7 +214,7 @@ class Trainer:
 
         return epoch_loss
 
-    def _train_slip(self, train_loader, optimizer, scaler):
+    def _train_slip(self, train_loader, optimizer):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
             batch = {
@@ -235,9 +236,9 @@ class Trainer:
                 )
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(
@@ -249,7 +250,7 @@ class Trainer:
 
         return epoch_loss
 
-    def _train_simvlm(self, train_loader, optimizer, scaler):
+    def _train_simvlm(self, train_loader, optimizer):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
             batch = {
@@ -261,9 +262,9 @@ class Trainer:
                 loss = self.model.criterion(logits, labels)
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(
@@ -272,7 +273,7 @@ class Trainer:
 
         return epoch_loss
 
-    def _train_vse(self, train_loader, optimizer, scaler):
+    def _train_vse(self, train_loader, optimizer):
         epoch_loss = 0.0
         num_negs = []
         for step, (batch) in enumerate(train_loader):
@@ -290,17 +291,17 @@ class Trainer:
                 num_negs.extend(tmp_num_negs)
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
+            self.scaler.scale(loss).backward()
             clip_grad_norm_(self.model.enc_params, 2.0)
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
 
         return epoch_loss
 
-    def _train_albef(self, train_loader, optimizer, scaler, epoch):
+    def _train_albef(self, train_loader, optimizer, epoch):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
             batch = {
@@ -317,9 +318,9 @@ class Trainer:
                 loss = loss_mlm + loss_ita + loss_itm
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(
@@ -328,7 +329,7 @@ class Trainer:
 
         return epoch_loss
 
-    def _train__train_unitervqa(self, train_loader, optimizer, scaler):
+    def _train__train_unitervqa(self, train_loader, optimizer):
         epoch_loss = 0.0
         for step, (batch) in enumerate(train_loader):
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
@@ -336,9 +337,9 @@ class Trainer:
                 loss = self.model.criterion(batch["targets"], logits)
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
 
             epoch_loss += loss.item()
             train_loader.set_postfix(
@@ -393,7 +394,6 @@ class Trainer:
             num_workers=self.num_workers,
         )
 
-        scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
         self.model.train()
 
         match self.method.lower():
@@ -411,9 +411,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_clip(
-                            train_loader, optimizer, scaler
-                        )
+                        loss_per_epoch = self._train_clip(train_loader, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -445,9 +443,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_slip(
-                            train_loader, optimizer, scaler
-                        )
+                        loss_per_epoch = self._train_slip(train_loader, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -480,7 +476,7 @@ class Trainer:
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
                         loss_per_epoch = self._train_albef(
-                            train_loader, optimizer, scaler, epoch
+                            train_loader, optimizer, epoch
                         )
                         lr_scheduler.step()
 
@@ -512,9 +508,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_simvlm(
-                            train_loader, optimizer, scaler
-                        )
+                        loss_per_epoch = self._train_simvlm(train_loader, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -541,9 +535,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_unitervqa(
-                            train_loader, optimizer, scaler
-                        )
+                        loss_per_epoch = self._train_unitervqa(train_loader, optimizer)
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
@@ -569,9 +561,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_vse(
-                            train_loader, optimizer, scaler
-                        )
+                        loss_per_epoch = self._train_vse(train_loader, optimizer)
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
