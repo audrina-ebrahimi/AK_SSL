@@ -85,7 +85,7 @@ class Trainer:
                     print(
                         "Dimension of the text features:", self.model.text_feature_dim
                     )
-                    print(f"Loss Function:{"SigLIP loss" if self.model.use_siglip else "Contrastive loss"}")
+                    print(f"Loss Function:{'SigLIP loss' if self.model.use_siglip else 'Contrastive loss'}")
             case "albef":
                 self.model = ALBEF(
                     vision_model=image_encoder, text_model=text_encoder, **kwargs
