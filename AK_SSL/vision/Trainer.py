@@ -245,6 +245,7 @@ class Trainer:
         self.loss = self.loss.to(self.device)
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
 
         if self.verbose:
             print(
@@ -259,7 +260,7 @@ class Trainer:
     def get_backbone(self):
         return self.model.backbone
 
-    def train_one_epoch(self, tepoch, optimizer, scaler):
+    def train_one_epoch(self, tepoch, optimizer):
         loss_hist_train = 0.0
         for images, _ in tepoch:
             images = images.to(self.device)
@@ -297,8 +298,9 @@ class Trainer:
                     loss = self.loss(z0, z1)
 
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
             loss_hist_train += loss.item()
             tepoch.set_postfix(loss=loss.item())
 
@@ -355,7 +357,6 @@ class Trainer:
         )
 
         self.model.train(True)
-        scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
 
         if self.reload_checkpoint:
             start_epoch = self._reload_latest_checkpoint() + 1
@@ -368,7 +369,7 @@ class Trainer:
         ):
             with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                 tepoch.set_description(f"Epoch {epoch + 1}")
-                loss_per_epoch = self.train_one_epoch(tepoch, optimizer, scaler)
+                loss_per_epoch = self.train_one_epoch(tepoch, optimizer)
 
             self.writer.add_scalar(
                 "Pretext Task/Loss/train",
@@ -461,7 +462,7 @@ class Trainer:
                     net.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
             case _:
-                raise Exception("Optimizer not found.")
+                raise ValueError(f"Optimizer {optimizer} not supported")
 
         net = net.to(self.device)
         criterion = nn.CrossEntropyLoss()
@@ -471,6 +472,7 @@ class Trainer:
         )
 
         net.train(True)
+        scaler_eval = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
 
         for epoch in tqdm(
             range(epochs),
@@ -488,9 +490,9 @@ class Trainer:
                     images = images.to(self.device)
                     labels = labels.to(self.device)
 
-                    # zero the parameter gradients
-                    optimizer_eval.zero_grad()
-                    outputs = net(images)
+                    with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                        outputs = net(images)
+                        loss = criterion(outputs, labels)
 
                     _, predicted = torch.max(outputs.data, 1)
                     total += labels.size(0)
@@ -498,12 +500,12 @@ class Trainer:
                     acc = 100 * correct / total
                     acc_hist_train += acc
 
-                    # compute loss
-                    loss = criterion(outputs, labels)
                     tepoch_ds.set_postfix(loss=loss.item(), accuracy=f"{acc:.2f}")
                     loss_hist_train += loss.item()
-                    loss.backward()
-                    optimizer_eval.step()
+                    optimizer_eval.zero_grad()
+                    scaler_eval.scale(loss).backward()
+                    scaler_eval.step(optimizer_eval)
+                    scaler_eval.update()
 
                 self.writer.add_scalar(
                     "Downstream Task/Loss/train",
@@ -558,7 +560,7 @@ class Trainer:
         )
 
         if len(sorted_checkpoints) == 0:
-            raise Exception("No checkpoints found.")
+            raise ValueError("No checkpoints found in the directory")
 
         self.load_checkpoint(sorted_checkpoints[-1])
 
