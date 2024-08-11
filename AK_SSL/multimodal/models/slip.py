@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 
-from models.clip import CLIP
-
+from AK_SSL.multimodal.models.clip import CLIP
 from AK_SSL.vision.models.modules.transformations import SimCLRViewTransform
 
 
