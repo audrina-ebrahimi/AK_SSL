@@ -599,7 +599,7 @@ class Trainer:
         )
 
         if len(sorted_checkpoints) == 0:
-            raise ("No checkpoints found.")
+            raise ValueError("No checkpoints found in the directory")
 
         self.load_checkpoint(sorted_checkpoints[-1])
 
