@@ -14,7 +14,7 @@ from apex.normalization.fused_layer_norm import FusedLayerNorm
 class UNITERForVQA(nn.Module):
     """
     UNITER: UNiversal Image-TExt Representation Learning
-    Paper Link: https://arxiv.org/pdf/1909.11740
+    Paper Link: https://arxiv.org/abs/1909.11740
     Implementation Link: https://github.com/ChenRocks/UNITER
     """
 

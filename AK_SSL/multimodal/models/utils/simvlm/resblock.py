@@ -1,4 +1,4 @@
-# 代码借鉴于 https://github.com/facebookresearch/detectron2
+# https://github.com/YulongBonjour/SimVLM/blob/main/model/resblock.py
 
 from torch import nn
 import torch
@@ -14,8 +14,6 @@ def c2_msra_fill(module: nn.Module) -> None:
     """
     nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
     if module.bias is not None:
-        # pyre-fixme[6]: Expected `Tensor` for 1st param but got `Union[nn.Module,
-        #  torch.Tensor]`.
         nn.init.constant_(module.bias, 0)
 
 
@@ -36,15 +34,9 @@ def get_norm(norm, out_channels):
             return None
         norm = {
             "BN": torch.nn.BatchNorm2d,
-            # Fixed in https://github.com/pytorch/pytorch/pull/36382
-            # "SyncBN": NaiveSyncBatchNorm if env.TORCH_VERSION <= (1, 5) else nn.SyncBatchNorm,
             "FrozenBN": FrozenBatchNorm2d,
             "GN": lambda channels: nn.GroupNorm(32, channels),
-            # for debugging:
             "nnSyncBN": nn.SyncBatchNorm,
-            # "naiveSyncBN": NaiveSyncBatchNorm,
-            # expose stats_mode N as an option to caller, required for zero-len inputs
-            # "naiveSyncBN_N": lambda channels: NaiveSyncBatchNorm(channels, stats_mode="N"),
         }[norm]
     return norm(out_channels)
 
@@ -72,15 +64,8 @@ class Conv2d(torch.nn.Conv2d):
         self.activation = activation
 
     def forward(self, x):
-        # torchscript does not support SyncBatchNorm yet
-        # https://github.com/pytorch/pytorch/issues/40507
-        # and we skip these codes in torchscript since:
-        # 1. currently we only support torchscript in evaluation mode
-        # 2. features needed by exporting module to torchscript are added in PyTorch 1.6 or
-        # later version, `Conv2d` in these PyTorch versions has already supported empty inputs.
         if not torch.jit.is_scripting():
             if x.numel() == 0 and self.training:
-                # https://github.com/pytorch/pytorch/issues/12013
                 assert not isinstance(
                     self.norm, torch.nn.SyncBatchNorm
                 ), "SyncBatchNorm does not support empty inputs!"
@@ -353,14 +338,9 @@ class BottleneckBlock(CNNBlockBase):
         # Zero-initialize the last normalization in each residual branch,
         # so that at the beginning, the residual branch starts with zeros,
         # and each residual block behaves like an identity.
-        # See Sec 5.1 in "Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour":
         # "For BN layers, the learnable scaling coefficient γ is initialized
         # to be 1, except for each residual block's last BN
         # where γ is initialized to be 0."
-
-        # nn.init.constant_(self.conv3.norm.weight, 0)
-        # TODO this somehow hurts performance when training GN models from scratch.
-        # Add it as an option when we need to use this code to train a backbone.
 
     def forward(self, x):
         out = self.conv1(x)
