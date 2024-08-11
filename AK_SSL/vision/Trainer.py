@@ -252,8 +252,6 @@ class Trainer:
                 f"{np.sum([int(np.prod(p.shape)) for p in self.model.parameters()]):,}",
             )
             print("--------------------------------------")
-            print(self.dataset)
-            print("--------------------------------------")
 
     def __del__(self):
         self.writer.close()
