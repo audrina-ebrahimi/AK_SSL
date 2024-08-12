@@ -47,6 +47,7 @@ class UNITER(nn.Module):
         self.hidden_size = hidden_size
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
         self.initializer_range = initializer_range
+        self.num_answer = num_answer
 
         self.text_embeddings = text_encoder
         self.image_embeddings = image_encoder
@@ -56,7 +57,7 @@ class UNITER(nn.Module):
             nn.Linear(self.hidden_size, self.hidden_size * 2),
             nn.GELU(),
             nn.LayerNorm(self.hidden_size * 2, eps=1e-12),
-            nn.Linear(self.hidden_size * 2, num_answer),
+            nn.Linear(self.hidden_size * 2, self.num_answer),
         )
 
         # Initialize weights

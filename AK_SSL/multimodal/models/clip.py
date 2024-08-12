@@ -37,30 +37,36 @@ class CLIP(nn.Module):
         super(CLIP, self).__init__()
 
         # Determine image feature dimensionality if not provided
-        if not image_feature_dim:
-            image_feature_dim = self.get_feature_size(image_encoder)
+        if image_feature_dim:
+            self.image_feature_dim = image_feature_dim
+        elif not image_feature_dim:
+            self.image_feature_dim = self.get_feature_size(image_encoder)
 
+        self.text_feature_dim = text_feature_dim
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
+        self.embed_dim = embed_dim
         self.use_siglip = use_siglip
+        self.init_tau = init_tau
+        self.init_bias = init_bias
 
         # Define the image projection network
         self.image_projection = torch.nn.Sequential(
-            torch.nn.Linear(image_feature_dim, image_feature_dim, bias=False),
+            torch.nn.Linear(self.image_feature_dim, self.image_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(image_feature_dim, embed_dim, bias=False),
+            torch.nn.Linear(self.image_feature_dim, self.embed_dim, bias=False),
         )
 
         # Define the text projection network
         self.text_projection = torch.nn.Sequential(
-            torch.nn.Linear(text_feature_dim, text_feature_dim, bias=False),
+            torch.nn.Linear(self.text_feature_dim, self.text_feature_dim, bias=False),
             torch.nn.ReLU(),
-            torch.nn.Linear(text_feature_dim, embed_dim, bias=False),
+            torch.nn.Linear(self.text_feature_dim, self.embed_dim, bias=False),
         )
 
         # Initialize temperature and bias parameters
-        self.t_prime = nn.Parameter(torch.ones([]) * init_tau)
-        self.b = nn.Parameter(torch.ones([]) * init_bias)
+        self.t_prime = nn.Parameter(torch.ones([]) * self.init_tau)
+        self.b = nn.Parameter(torch.ones([]) * self.init_bias)
 
     def forward(
         self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor

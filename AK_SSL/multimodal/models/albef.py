@@ -50,13 +50,16 @@ class ALBEF(nn.Module):
         super().__init__()
 
         # Determine image feature dimensionality if not provided
-        if not image_feature_dim:
-            image_feature_dim = self.get_feature_size(image_encoder)
+        if image_feature_dim:
+            self.image_feature_dim = image_feature_dim
+        elif not image_feature_dim:
+            self.image_feature_dim = self.get_feature_size(image_encoder)
 
         # Initialize the image and text encoders
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
 
+        self.text_feature_dim = text_feature_dim
         self.mlm_probability = mlm_probability
         self.embed_dim = embed_dim
         self.temp = nn.Parameter(torch.ones([]) * temp)
@@ -65,7 +68,7 @@ class ALBEF(nn.Module):
         self.alpha = alpha
         self.itm_head = nn.Linear(self.text_width, 2)
 
-        self.vision_width = image_feature_dim
+        self.vision_width = self.image_feature_dim
         self.text_width = text_feature_dim
 
         # Projection layers to align vision and text features to the same embedding dimension

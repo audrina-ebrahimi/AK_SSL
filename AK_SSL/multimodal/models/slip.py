@@ -34,24 +34,29 @@ class SLIP(nn.Module):
         """
         super(SLIP, self).__init__()
 
+        self.mlp_dim = mlp_dim
+        self.image_feature_dim = image_feature_dim
+        self.text_feature_dim = text_feature_dim
+        self.embed_dim = embed_dim
+
         # Initialize the CLIP model with the given encoders and dimensions
         self.clip = CLIP(
             image_encoder=image_encoder,
             text_encoder=text_encoder,
-            image_feature_dim=image_feature_dim,
-            text_feature_dim=text_feature_dim,
-            embed_dim=embed_dim,
+            image_feature_dim=self.image_feature_dim,
+            text_feature_dim=self.text_feature_dim,
+            embed_dim=self.embed_dim,
         )
 
         # Define the vision MLP for feature transformation and projection
         self.vision_mlp = nn.Sequential(
-            nn.Linear(image_feature_dim, mlp_dim),
-            nn.SyncBatchNorm(mlp_dim),
+            nn.Linear(image_feature_dim, self.mlp_dim),
+            nn.SyncBatchNorm(self.mlp_dim),
             nn.ReLU(inplace=True),
-            nn.Linear(mlp_dim, mlp_dim),
-            nn.SyncBatchNorm(mlp_dim),
+            nn.Linear(self.mlp_dim, self.mlp_dim),
+            nn.SyncBatchNorm(self.mlp_dim),
             nn.ReLU(inplace=True),
-            nn.Linear(mlp_dim, embed_dim),
+            nn.Linear(self.mlp_dim, embed_dim),
         )
 
     def forward(

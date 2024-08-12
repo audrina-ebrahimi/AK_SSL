@@ -74,17 +74,21 @@ class SimVLM(nn.Module):
         """
         super(SimVLM, self).__init__()
 
+        self.vocab_size = vocab_size
         self.max_seq_len = max_seq_len
         self.max_trunc_txt_len = max_trunc_txt_len
         self.prefix_txt_len = prefix_txt_len
         self.pad_idx = pad_idx
         self.feature_dim = feature_dim
         self.target_txt_len = target_txt_len
+        self.image_resolution = image_resolution
+        self.patch_size = patch_size
+        self.num_channels = num_channels
 
         # Define word embedding and positional embedding layers for text
-        self.word_embedding = nn.Embedding(vocab_size, feature_dim)
+        self.word_embedding = nn.Embedding(self.vocab_size, feature_dim)
         self.pos_embedding = nn.Embedding(max_seq_len, feature_dim)
-        image_feat_map_size = image_resolution // patch_size
+        image_feat_map_size = self.image_resolution // self.patch_size
         self.image_tokens_len = image_feat_map_size**2
 
         # Define a patch embedding layer for image patches
@@ -94,15 +98,15 @@ class SimVLM(nn.Module):
 
         # Define a ResBlock for image feature extraction
         self.ResBlock = ResBlock(
-            in_channels=num_channels,
+            in_channels=self.num_channels,
             out_channels=feature_dim,
-            kernel_size=patch_size,
-            stride=patch_size,
+            kernel_size=self.patch_size,
+            stride=self.patch_size,
         )
 
         # Define a sequence of normalization and linear layers to convert features to logits
         self.to_logits = nn.Sequential(
-            nn.LayerNorm(feature_dim), nn.Linear(feature_dim, vocab_size)
+            nn.LayerNorm(feature_dim), nn.Linear(feature_dim, self.vocab_size)
         )
 
         # Assign transformer encoder and decoder
