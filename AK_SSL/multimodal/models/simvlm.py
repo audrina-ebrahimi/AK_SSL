@@ -7,7 +7,7 @@ import torch.nn as nn
 from einops import rearrange
 from axial_positional_embedding import AxialPositionalEmbedding
 
-from .utils.simvlm.resblock import BottleneckBlock
+from AK_SSL.multimodal.models.utils.simvlm.resblock import BottleneckBlock
 
 
 class ResBlock(nn.Sequential):
