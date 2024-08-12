@@ -351,7 +351,7 @@ class Trainer:
 
     def train(
         self,
-        train_dataset: torch.utils.data.Dataset,
+        dataset: torch.utils.data.Dataset,
         batch_size: int = 256,
         start_epoch: int = 1,
         epochs: int = 100,
@@ -388,7 +388,7 @@ class Trainer:
             start_epoch = self._reload_latest_checkpoint() + 1
 
         train_loader = torch.utils.data.DataLoader(
-            train_dataset,
+            dataset,
             batch_size=batch_size,
             shuffle=True,
             num_workers=self.num_workers,

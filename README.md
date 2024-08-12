@@ -260,7 +260,6 @@ trainer = Trainer(
     method="barlowtwins",           # training method as string (BarlowTwins, BYOL, DINO, MoCov2, MoCov3, SimCLR, SimSiam, SwAV)
     backbone=backbone,              # backbone architecture as torch.Module
     feature_size=feature_size,      # size of the extracted features as integer
-    dataset=train_dataset,          # training dataset as torch.utils.data.Dataset
     image_size=32,                  # dataset image size as integer
     save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
     checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
@@ -513,7 +512,8 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
 Then, we'll train the self-supervised model using the specified parameters.
 
 ```python
-  trainer.train(               
+  trainer.train(
+      dataset=train_dataset,          # training dataset as torch.utils.data.Dataset               
       batch_size=256,          # the number of training examples used in each iteration as integer
       start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
       epochs=100,              # the total number of training epochs as integer
@@ -529,7 +529,7 @@ Then, we'll train the self-supervised model using the specified parameters.
 
 ```python
   trainer.train(
-      train_dataset,           # the training data set as torch.utils.data.Dataset             
+      dataset=train_dataset,           # the training data set as torch.utils.data.Dataset             
       batch_size=256,          # the number of training examples used in each iteration as integer
       start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
       epochs=100,              # the total number of training epochs as integer
