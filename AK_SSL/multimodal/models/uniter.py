@@ -10,7 +10,7 @@ from torch import nn
 from torch.nn import functional as F
 
 
-class UNITERForVQA(nn.Module):
+class UNITER(nn.Module):
     """
     UNITER: UNiversal Image-TExt Representation Learning
     Paper Link: https://arxiv.org/abs/1909.11740
