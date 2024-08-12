@@ -553,7 +553,7 @@ trainer.evaluate(
     weight_decay=1e-6,                # a regularization term applied during evaluation to prevent overfitting as float
     learning_rate=1e-3,               # the learning rate for the optimizer during evaluation as float
     batch_size=256,                   # the batch size used for evaluation in integer
-    fine_tuning_data_proportion=1,    # the proportion of training data to use during evalutation as float in range of (0.0, 1]
+    fine_tuning_data_proportion=1,    # the proportion of training data to use during evaluation as float in range of (0.0, 1]
 )
 ```
 
