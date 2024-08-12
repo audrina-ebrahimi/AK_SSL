@@ -74,7 +74,7 @@ class Trainer:
         match self.method.lower():
             case "clip":
                 self.model = CLIP(
-                    image_encoder=image_encoder, text_model=text_encoder, **kwargs
+                    image_encoder=image_encoder, text_encoder=text_encoder, **kwargs
                 )
                 if self.verbose:
                     print("Embedding Dimension:", self.model.embed_dim)
