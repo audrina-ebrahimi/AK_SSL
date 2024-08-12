@@ -36,7 +36,6 @@ if __name__ == "__main__":
         "tensorboard",
         "einops",
         "axial_positional_embedding",
-        "apex",
     ]
 
     packages = setuptools.find_packages()

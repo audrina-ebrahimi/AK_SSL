@@ -8,7 +8,6 @@ some classes are modified from HuggingFace
 import torch
 from torch import nn
 from torch.nn import functional as F
-from apex.normalization.fused_layer_norm import FusedLayerNorm
 
 
 class UNITERForVQA(nn.Module):
@@ -56,7 +55,7 @@ class UNITERForVQA(nn.Module):
         self.vqa_output = nn.Sequential(
             nn.Linear(self.hidden_size, self.hidden_size * 2),
             nn.GELU(),
-            FusedLayerNorm(self.hidden_size * 2, eps=1e-12),
+            nn.LayerNorm(self.hidden_size * 2, eps=1e-12),
             nn.Linear(self.hidden_size * 2, num_answer),
         )
 
@@ -116,7 +115,7 @@ class UNITERForVQA(nn.Module):
             # truncated_normal for initialization
             # cf https://github.com/pytorch/pytorch/pull/5617
             module.weight.data.normal_(mean=0.0, std=self.initializer_range)
-        elif isinstance(module, FusedLayerNorm):
+        elif isinstance(module, nn.LayerNorm):
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
         if isinstance(module, nn.Linear) and module.bias is not None:
