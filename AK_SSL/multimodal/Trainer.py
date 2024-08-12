@@ -418,7 +418,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -450,7 +450,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -482,7 +482,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -513,7 +513,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -539,7 +539,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -565,7 +565,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -575,7 +575,7 @@ class Trainer:
             case _:
                 raise ValueError(f"Method {self.method} not supported")
 
-        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
             self.method, self.timestamp, epoch + 1
         )
         torch.save(self.model.state_dict(), model_path)
@@ -586,9 +586,9 @@ class Trainer:
             print("Checkpoint loaded.")
 
     def _reload_latest_checkpoint(self):
-        checkpoints = os.listdir(self.checkpoint_path)
+        checkpoints = os.listdir(self.save_dir)
         sorted_checkpoints = sorted(
-            [os.path.join(self.checkpoint_path, i) for i in checkpoints],
+            [os.path.join(self.save_dir, i) for i in checkpoints],
             key=os.path.getmtime,
         )
 
