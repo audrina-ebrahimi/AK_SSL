@@ -77,7 +77,7 @@ class CustomClipDataset(torch.utils.data.Dataset):
         ), "Number of images and captions should be same"
 
         self.captions = list(captions)
-        self.images = [Image.open(img) for img in images]
+        self.images = images
         self.image_transform = image_transform
 
         self.encoded_captions = tokenizer(
@@ -91,7 +91,7 @@ class CustomClipDataset(torch.utils.data.Dataset):
         return len(self.images)
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        image = self.images[idx]
+        image = Image.open(self.images[idx])
         image = self.image_transform(image)
         items = {key: val[idx] for key, val in self.encoded_captions.items()}
         items["image"] = image

@@ -227,7 +227,7 @@ class Trainer:
                 self.model = SwAV(self.backbone, self.feature_size, **kwargs)
                 self.loss = SwAVLoss(self.model.num_crops + 2, **kwargs)
                 self.transformation_global = SimCLRViewTransform(
-                    imgage_size=self.image_size, **kwargs
+                    image_size=self.image_size, **kwargs
                 )
                 self.transformation_local = self.transformation_global
                 if self.verbose:
