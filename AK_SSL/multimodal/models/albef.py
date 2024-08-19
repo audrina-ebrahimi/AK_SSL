@@ -331,7 +331,7 @@ class ALBEF(nn.Module):
         self.queue_ptr[0] = ptr
 
     def get_feature_size(self, encoder: nn.Module):
-        encoder.to(self.device)
+        encoder = encoder.to(self.device)
         encoder.eval()
         dummy_input = torch.randn(1, 3, 32, 32)  # Create a dummy input for the encoder
         with torch.no_grad():
