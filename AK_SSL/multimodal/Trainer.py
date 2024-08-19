@@ -183,9 +183,9 @@ class Trainer:
     def __del__(self):
         self.writer.close()
 
-    def _train_clip(self, train_loader, optimizer):
+    def _train_clip(self, tepoch, optimizer):
         epoch_loss = 0.0
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             batch = {
                 k: v.to(self.device)
                 for k, v in batch.items()
@@ -205,7 +205,7 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(
+            tepoch.set_postfix(
                 loss=loss.item(),
                 temp=self.model.t_prime.exp().item(),
                 bias=self.model.b.item(),
@@ -214,9 +214,9 @@ class Trainer:
 
         return epoch_loss
 
-    def _train_slip(self, train_loader, optimizer):
+    def _train_slip(self, tepoch, optimizer):
         epoch_loss = 0.0
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             batch = {
                 k: v.to(self.device)
                 for k, v in batch.items()
@@ -241,7 +241,7 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(
+            tepoch.set_postfix(
                 loss=loss.item(),
                 temp=self.model.t_prime.exp().item(),
                 bias=self.model.b.item(),
@@ -250,9 +250,9 @@ class Trainer:
 
         return epoch_loss
 
-    def _train_simvlm(self, train_loader, optimizer):
+    def _train_simvlm(self, tepoch, optimizer):
         epoch_loss = 0.0
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             batch = {
                 k: v.to(self.device) for k, v in batch.items() if k in ["text", "image"]
             }
@@ -267,16 +267,14 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(
-                loss=loss.item(), lr=optimizer.param_groups[0]["lr"]
-            )
+            tepoch.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
         return epoch_loss
 
-    def _train_vse(self, train_loader, optimizer):
+    def _train_vse(self, tepoch, optimizer):
         epoch_loss = 0.0
         num_negs = []
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             batch = {
                 k: v.to(self.device)
                 for k, v in batch.items()
@@ -297,20 +295,20 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
+            tepoch.set_postfix(loss=loss.item(), epoch_negs=np.mean(num_negs))
 
         return epoch_loss
 
-    def _train_albef(self, train_loader, optimizer, epoch):
+    def _train_albef(self, tepoch, optimizer, epoch):
         epoch_loss = 0.0
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             batch = {
                 k: v.to(self.device) for k, v in batch.items() if k in ["text", "image"]
             }
             if epoch > 0:
                 alpha = self.model.alpha
             else:
-                alpha = self.model.alpha * min(1, step / len(train_loader))
+                alpha = self.model.alpha * min(1, step / len(tepoch))
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 loss_mlm, loss_ita, loss_itm = self.model(
                     text=batch["text"], image=batch["image"], alpha=alpha
@@ -323,15 +321,13 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(
-                loss=loss.item(), lr=optimizer.param_groups[0]["lr"]
-            )
+            tepoch.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
         return epoch_loss
 
-    def _train__train_unitervqa(self, train_loader, optimizer):
+    def _train_unitervqa(self, tepoch, optimizer):
         epoch_loss = 0.0
-        for step, (batch) in enumerate(train_loader):
+        for step, (batch) in enumerate(tepoch):
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 logits = self.model(**batch)
                 loss = self.model.criterion(batch["targets"], logits)
@@ -342,7 +338,7 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            train_loader.set_postfix(
+            tepoch.set_postfix(
                 loss=loss.item(),
                 temp=self.model.t_prime.exp().item(),
                 bias=self.model.b.item(),
@@ -411,7 +407,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_clip(train_loader, optimizer)
+                        loss_per_epoch = self._train_clip(tepoch, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -422,7 +418,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -443,7 +439,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_slip(train_loader, optimizer)
+                        loss_per_epoch = self._train_slip(tepoch, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -454,7 +450,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -475,9 +471,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_albef(
-                            train_loader, optimizer, epoch
-                        )
+                        loss_per_epoch = self._train_albef(tepoch, optimizer, epoch)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -488,7 +482,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -508,7 +502,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_simvlm(train_loader, optimizer)
+                        loss_per_epoch = self._train_simvlm(tepoch, optimizer)
                         lr_scheduler.step()
 
                     self.writer.add_scalar(
@@ -519,7 +513,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -535,7 +529,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_unitervqa(train_loader, optimizer)
+                        loss_per_epoch = self._train_unitervqa(tepoch, optimizer)
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
@@ -545,7 +539,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -561,7 +555,7 @@ class Trainer:
                 ):
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
-                        loss_per_epoch = self._train_vse(train_loader, optimizer)
+                        loss_per_epoch = self._train_vse(tepoch, optimizer)
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
@@ -571,7 +565,7 @@ class Trainer:
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
                         model_path = (
-                            self.checkpoint_path
+                            self.save_dir
                             + "{}_model_{}_epoch{}.pth".format(
                                 self.method, self.timestamp, epoch + 1
                             )
@@ -581,7 +575,7 @@ class Trainer:
             case _:
                 raise ValueError(f"Method {self.method} not supported")
 
-        model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
+        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
             self.method, self.timestamp, epoch + 1
         )
         torch.save(self.model.state_dict(), model_path)
@@ -592,9 +586,9 @@ class Trainer:
             print("Checkpoint loaded.")
 
     def _reload_latest_checkpoint(self):
-        checkpoints = os.listdir(self.checkpoint_path)
+        checkpoints = os.listdir(self.save_dir)
         sorted_checkpoints = sorted(
-            [os.path.join(self.checkpoint_path, i) for i in checkpoints],
+            [os.path.join(self.save_dir, i) for i in checkpoints],
             key=os.path.getmtime,
         )
 
