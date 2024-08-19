@@ -83,7 +83,6 @@ class SLIP(nn.Module):
             "aug1_embed": aug1_embed,
             "aug2_embed": aug2_embed,
             "clip_output": clip_output,
-            "logit_scale": self.logit_scale.exp(),
         }
 
     def criterion(
