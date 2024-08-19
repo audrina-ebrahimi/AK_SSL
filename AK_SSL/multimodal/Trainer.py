@@ -95,7 +95,7 @@ class Trainer:
 
             case "albef":
                 self.model = ALBEF(
-                    image_encoder=image_encoder, text_encoder=text_encoder, **kwargs
+                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
                 )
                 if self.verbose:
                     print("MLM Probability:", self.model.mlm_probability)

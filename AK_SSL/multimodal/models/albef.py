@@ -31,6 +31,7 @@ class ALBEF(nn.Module):
         queue_size: int = 1024,
         momentum: float = 0.9,
         alpha: float = 0.4,
+        device: str = 'cpu',
     ):
         """
         Initializes the ALBEF model with the given parameters.
@@ -48,6 +49,8 @@ class ALBEF(nn.Module):
             alpha (float): Weight for the momentum distillation target. (default: 0.4)
         """
         super().__init__()
+
+        self.device = device
 
         # Determine image feature dimensionality if not provided
         if image_feature_dim:
@@ -328,10 +331,11 @@ class ALBEF(nn.Module):
         self.queue_ptr[0] = ptr
 
     def get_feature_size(self, encoder: nn.Module):
+        encoder.to(self.device)
         encoder.eval()
         dummy_input = torch.randn(1, 3, 32, 32)  # Create a dummy input for the encoder
         with torch.no_grad():
-            output = encoder(dummy_input)  # Get the output features from the encoder
+            output = encoder(dummy_input).to(self.device)  # Get the output features from the encoder
         return output.shape[1]  # Return the dimensionality of the output features
 
 
