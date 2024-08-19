@@ -20,7 +20,8 @@ class SLIP(nn.Module):
         image_feature_dim: int = 0,
         text_feature_dim: int = 768,
         embed_dim: int = 256,
-        device: str = 'cpu'
+        device: str = 'cpu',
+        **kwargs
     ) -> None:
         """
         Initialize the SLIP model.
@@ -61,13 +62,15 @@ class SLIP(nn.Module):
             nn.Linear(self.mlp_dim, embed_dim),
         )
 
+        self.simclr_view_transform = SimCLRViewTransform(**kwargs)
+
     def forward(
         self, image: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor
     ) -> dict:
 
         # Apply SimCLR transformation to the image twice to get two augmented views
-        augmented_image_1 = SimCLRViewTransform(image)
-        augmented_image_2 = SimCLRViewTransform(image)
+        augmented_image_1 = self.simclr_view_transform(image)
+        augmented_image_2 = self.simclr_view_transform(image)
 
         # Pass the augmented images through the vision MLP
         aug1_embed = self.vision_mlp(self.clip.image_encoder(augmented_image_1))
