@@ -74,7 +74,10 @@ class Trainer:
         match self.method.lower():
             case "clip":
                 self.model = CLIP(
-                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
+                    image_encoder=image_encoder,
+                    text_encoder=text_encoder,
+                    device=self.device,
+                    **kwargs,
                 )
                 if self.verbose:
                     print("Embedding Dimension:", self.model.embed_dim)
@@ -130,7 +133,10 @@ class Trainer:
 
             case "slip":
                 self.model = SLIP(
-                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
+                    image_encoder=image_encoder,
+                    text_encoder=text_encoder,
+                    device=self.device,
+                    **kwargs,
                 )
                 if self.verbose:
                     print("Embedding Dimension:", self.model.embed_dim)
@@ -243,8 +249,8 @@ class Trainer:
             epoch_loss += loss.item()
             tepoch.set_postfix(
                 loss=loss.item(),
-                temp=self.model.t_prime.exp().item(),
-                bias=self.model.b.item(),
+                temp=self.model.clip.t_prime.exp().item(),
+                bias=self.model.clip.b.item(),
                 lr=optimizer.param_groups[0]["lr"],
             )
 
@@ -338,12 +344,7 @@ class Trainer:
             self.scaler.update()
 
             epoch_loss += loss.item()
-            tepoch.set_postfix(
-                loss=loss.item(),
-                temp=self.model.t_prime.exp().item(),
-                bias=self.model.b.item(),
-                lr=optimizer.param_groups[0]["lr"],
-            )
+            tepoch.set_postfix(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
     def train(
         self,
@@ -417,11 +418,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
@@ -449,11 +447,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
@@ -481,11 +476,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
@@ -512,11 +504,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
@@ -538,11 +527,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
@@ -564,11 +550,8 @@ class Trainer:
                     )
                     self.writer.flush()
                     if (epoch + 1) % self.checkpoint_interval == 0:
-                        model_path = (
-                            self.save_dir
-                            + "{}_model_{}_epoch{}.pth".format(
-                                self.method, self.timestamp, epoch + 1
-                            )
+                        model_path = self.save_dir + "{}_model_{}_epoch{}.pth".format(
+                            self.method, self.timestamp, epoch + 1
                         )
                         torch.save(self.model.state_dict(), model_path)
 
