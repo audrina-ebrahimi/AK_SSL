@@ -20,7 +20,7 @@ class SLIP(nn.Module):
         image_feature_dim: int = 0,
         text_feature_dim: int = 768,
         embed_dim: int = 256,
-        device: str = 'cpu',
+        device: str = "cpu",
         **kwargs
     ) -> None:
         """
@@ -51,9 +51,11 @@ class SLIP(nn.Module):
             device=device,
         )
 
+        self.image_feature_dim = self.clip.image_feature_dim
+
         # Define the vision MLP for feature transformation and projection
         self.vision_mlp = nn.Sequential(
-            nn.Linear(image_feature_dim, self.mlp_dim),
+            nn.Linear(self.image_feature_dim, self.mlp_dim),
             nn.SyncBatchNorm(self.mlp_dim),
             nn.ReLU(inplace=True),
             nn.Linear(self.mlp_dim, self.mlp_dim),
