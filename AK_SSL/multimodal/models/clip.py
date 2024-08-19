@@ -50,6 +50,7 @@ class CLIP(nn.Module):
         self.use_siglip = use_siglip
         self.init_tau = init_tau
         self.init_bias = init_bias
+        self.device = device
 
         # Define the image projection network
         self.image_projection = torch.nn.Sequential(
@@ -94,7 +95,7 @@ class CLIP(nn.Module):
 
     def get_feature_size(self, encoder: nn.Module):
         encoder.eval()
-        dummy_input = torch.randn(1, 3, 32, 32).to(device)  # Create a dummy input for the encoder
+        dummy_input = torch.randn(1, 3, 32, 32).to(self.device)  # Create a dummy input for the encoder
         with torch.no_grad():
             output = encoder(dummy_input)  # Get the output features from the encoder
         return output.shape[1]  # Return the dimensionality of the output features
