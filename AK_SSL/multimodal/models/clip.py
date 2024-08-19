@@ -36,6 +36,8 @@ class CLIP(nn.Module):
             use_siglip (bool): Flag to indicate if SIGLIP loss should be used (default: False)
         """
         super(CLIP, self).__init__()
+        
+        self.device = device
 
         # Determine image feature dimensionality if not provided
         if image_feature_dim:
@@ -50,7 +52,6 @@ class CLIP(nn.Module):
         self.use_siglip = use_siglip
         self.init_tau = init_tau
         self.init_bias = init_bias
-        self.device = device
 
         # Define the image projection network
         self.image_projection = torch.nn.Sequential(
