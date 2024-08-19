@@ -21,6 +21,7 @@ class CLIP(nn.Module):
         init_tau: float = np.log(1.0),
         init_bias: float = 0.0,
         use_siglip: bool = False,
+        device: str = 'cpu'
     ):
         """
         Initialize the CLIP model.
@@ -93,7 +94,7 @@ class CLIP(nn.Module):
 
     def get_feature_size(self, encoder: nn.Module):
         encoder.eval()
-        dummy_input = torch.randn(1, 3, 32, 32)  # Create a dummy input for the encoder
+        dummy_input = torch.randn(1, 3, 32, 32).to(device)  # Create a dummy input for the encoder
         with torch.no_grad():
             output = encoder(dummy_input)  # Get the output features from the encoder
         return output.shape[1]  # Return the dimensionality of the output features

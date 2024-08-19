@@ -3,7 +3,7 @@ import re
 import numpy as np
 import torch
 import torch.nn as nn
-from tqdm.auto import tqdm
+from tqdm import tqdm
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn.utils.clip_grad import clip_grad_norm_
@@ -74,7 +74,7 @@ class Trainer:
         match self.method.lower():
             case "clip":
                 self.model = CLIP(
-                    image_encoder=image_encoder, text_encoder=text_encoder, **kwargs
+                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
                 )
                 if self.verbose:
                     print("Embedding Dimension:", self.model.embed_dim)
@@ -130,7 +130,7 @@ class Trainer:
 
             case "slip":
                 self.model = SLIP(
-                    image_encoder=image_encoder, text_encoder=text_encoder, **kwargs
+                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
                 )
                 if self.verbose:
                     print("Embedding Dimension:", self.model.embed_dim)

@@ -20,6 +20,7 @@ class SLIP(nn.Module):
         image_feature_dim: int = 0,
         text_feature_dim: int = 768,
         embed_dim: int = 256,
+        device: str = 'cpu'
     ) -> None:
         """
         Initialize the SLIP model.
@@ -46,6 +47,7 @@ class SLIP(nn.Module):
             image_feature_dim=self.image_feature_dim,
             text_feature_dim=self.text_feature_dim,
             embed_dim=self.embed_dim,
+            device=device,
         )
 
         # Define the vision MLP for feature transformation and projection
