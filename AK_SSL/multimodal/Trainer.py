@@ -312,7 +312,9 @@ class Trainer:
         epoch_loss = 0.0
         for step, (batch) in enumerate(tepoch):
             batch = {
-                k: v.to(self.device) for k, v in batch.items() if k in ["text", "image"]
+                k: v.to(self.device)
+                for k, v in batch.items()
+                if k in ["input_ids", "attention_mask", "image"]
             }
             if epoch > 0:
                 alpha = self.model.alpha
