@@ -120,7 +120,7 @@ class ALBEF(nn.Module):
             image.device
         )
 
-        image_feat = F.normalize(self.vision_proj(image_embeds[:, 0, :]), dim=-1)
+        image_feat = F.normalize(self.vision_proj(image_embeds), dim=-1)
 
         text_output = self.text_encoder(
             input_ids, attention_mask=attention_mask, return_dict=True, mode="text"
