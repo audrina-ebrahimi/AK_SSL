@@ -27,7 +27,16 @@ if __name__ == "__main__":
 
     python_requires = ">=3.10"
 
-    install_requires = ["torch", "torchvision", "torcheval", "tqdm", "tensorboard"]
+    install_requires = [
+        "numpy",
+        "torch",
+        "torchvision",
+        "torcheval",
+        "tqdm",
+        "tensorboard",
+        "einops",
+        "axial_positional_embedding",
+    ]
 
     packages = setuptools.find_packages()
 

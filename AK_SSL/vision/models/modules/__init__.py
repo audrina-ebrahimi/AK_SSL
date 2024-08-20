@@ -1,4 +1,4 @@
-from AK_SSL.models.modules.heads import *
+from AK_SSL.vision.models.modules.heads import *
 
 __all__ = [
     "SimCLRProjectionHead",

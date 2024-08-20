@@ -29,7 +29,7 @@
 ---
 ## 📍 Overview
 Welcome to the Self-Supervised Learning Library! This repository hosts a collection of tools and implementations for self-supervised learning. Self-supervised learning is a powerful paradigm that leverages unlabeled data to pre-trained models, which can then be fine-tuned on specific tasks with smaller labeled datasets. This library aims to provide researchers and practitioners with a comprehensive set of tools to experiment, learn, and apply self-supervised learning techniques effectively.
-This project was our assignment during the summer apprenticeship in the newly established Intelligent and Learning System ([ILS](http://ils.ui.ac.ir/)) laboratory at the University of Isfahan.
+This project was our assignment during the summer apprenticeship and final project in the newly established Intelligent and Learning System ([ILS](http://ils.ui.ac.ir/)) laboratory at the University of Isfahan.
 
 ---
 
@@ -130,6 +130,101 @@ SwAV, or Swapping Assignments Between Views, is a self-supervised learning appro
 
 </details>
 
+
+
+### [CLIP](./AK_SSL/multimodal/models/clip.py)
+CLIP (Contrastive Language-Image Pre-training) is a deep learning method that jointly trains images and text. This model consists of two neural networks: an image encoder and a text encoder. The image encoder takes an image as input and produces a vector of numbers as output, representing the content of the image. The text encoder takes a sentence as input and produces a vector of numbers as output, representing the meaning of the sentence. The goal of CLIP is to learn to make the output vectors of the image encoder and the text encoder similar for related images and sentences. For example, if an image of a cat and a sentence like "This is a cat" are given to CLIP, the model should produce similar output vectors for the image and the sentence. CLIP is trained using a technique called contrastive learning. In contrastive learning, the model is given a set of images and sentences and is asked to pair the related images and sentences together. The model learns by optimizing a loss function that measures the difference between the output vectors for related images and sentences.
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/abs/2103.00020)|[Link](https://github.com/openai/CLIP)|
+  
+
+</details>
+
+
+### [ALBEF](./AK_SSL/multimodal/models/albef.py)
+ALBEF (ALign the image and text representations BEfore Fusing) is a deep learning method used to improve the accuracy of image and language processing tasks. This method is based on the idea of precisely aligning features extracted from different inputs before merging them into a single representation. ALBEF works by first extracting features from image and text inputs separately. This can be done using various deep learning models, such as convolutional neural networks for images or recurrent neural networks for text. Next, ALBEF aligns the extracted features in a shared space. This alignment ensures that features related to similar concepts are positioned in similar locations in the representation space. Various methods can be used for feature alignment, such as:
+
+- Attention-based alignment: This method uses an attention mechanism to focus on relevant parts of each input and then aligns the corresponding features in a shared space.
+- Metric-based alignment: This method uses a similarity metric to measure the similarity between features from different inputs and then aligns them in a shared space based on this similarity.
+  
+After aligning the features, ALBEF merges them into a single representation. This merging can be done in various ways, such as:
+
+- Sum integration: This method sums the aligned features.
+- Neural network-based integration: This method uses a neural network to learn how to merge the aligned features in a non-linear way.
+
+Finally, ALBEF uses the merged single representation to make a prediction or decision. This prediction can be related to a classification, categorization, or question-answering task.
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/pdf/2107.07651)|[Link](https://github.com/salesforce/ALBEF)|
+  
+
+</details>
+
+
+### [SLIP](./AK_SSL/multimodal/models/slip.py)
+SLIP (Self-supervision meets Language-Image Pre-training) is an innovative method in machine learning within the realm of deep learning that offers a powerful combination of self-supervision and language-image pre-training. This approach allows models to simultaneously learn from large paired datasets of images and text. The main idea behind SLIP is to use self-supervision, utilizing the inherent signals in the data to create artificial labels instead of relying on expensive manual labeling. For example, the title of an image can serve as a label for that image. Additionally, with language-image pre-training, SLIP enables the model to understand the relationships between visual and linguistic concepts. This helps the model perform more complex tasks, such as generating image descriptions, answering questions about images, and even creating new images based on textual descriptions.
+Using the SLIP method offers numerous advantages, including efficient data utilization, improved performance on various tasks such as image classification, object detection, text generation, and image-to-text translation, as well as a deeper understanding of the connections between language and images. These features make SLIP highly useful and effective for many real-world applications.
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/abs/2112.12750)|[Link](https://github.com/facebookresearch/SLIP)|
+  
+
+</details>
+
+
+### [VSE](./AK_SSL/multimodal/models/vse.py)
+VSE (Visual-Semantic Embedding) is a powerful method in machine learning used to establish a connection between visual and textual information. The main goal of VSE is to map images and text into a shared vector space such that images related to similar texts are close to each other. VSE helps models understand the complex relationship between visual and linguistic concepts, which is crucial for many real-world applications. VSE is utilized in a wide range of applications, including text-based image retrieval, image description generation, answering questions about images, and multi-modal recommendation systems. Additionally, VSE serves as the foundation for many advanced multi-modal models capable of processing and understanding various types of data, such as images, text, audio, and video.
+VSE works by first converting images and texts into dense vectors. For images, convolutional neural networks (CNNs) are used to extract visual features. For text, natural language models like BERT or GPT are used to generate word vectors. These vectors are then mapped into a shared vector space designed to bring related images and texts close together. A similarity function, such as cosine similarity or Euclidean distance, is used to measure the similarity between images and texts.
+
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/abs/2210.02206v1)|[Link](https://github.com/96-Zachary/vse_2ad)|
+  
+
+</details>
+
+
+### [SimVLM](./AK_SSL/multimodal/models/simvlm.py)
+SimVLM (Simple Visual Language Model Pretraining with Weak Supervision) is a powerful pre-training method in machine learning that allows models to simultaneously learn from large paired datasets of images and text. This method is based on the idea of using weak supervision, which utilizes the inherent signals in the data to create artificial labels instead of requiring expensive manual labeling. As mentioned, the main idea behind SimVLM is the use of weak supervision. SimVLM uses weak signals such as image titles, product descriptions, or auto-generated captions produced by text generation models. These weak signals act as artificial labels for training the model. By using image-text pairs, SimVLM enables the model to understand the relationship between visual and linguistic concepts. This helps the model perform more complex tasks, such as generating image descriptions, answering questions about images, and even creating new images based on textual descriptions.
+
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/abs/2108.10904)|[Link](https://github.com/YulongBonjour/SimVLM)|
+  
+
+</details>
+
+
+### [UNITER](./AK_SSL/multimodal/models/uniter.py)
+UNITER (UNiversal Image-TExt Representation Learning) is an advanced model in the field of deep learning designed for learning unified representations of images and text. This model is developed to gain a deeper understanding of the relationship between visual and linguistic concepts and to improve performance across a wide range of multimodal tasks. UNITER maps images and text into shared vector spaces using a dual-branch transformer. This space is designed so that related images and texts are close to each other. It also utilizes weak supervision, such as image titles, product descriptions, or auto-generated captions produced by text generation models. These weak signals act as artificial labels for training the model. UNITER uses a multi-head attention mechanism to simultaneously focus on different parts of the image and text, modeling the relationships between them. Compared to other multimodal pre-training methods, UNITER performs better on complex tasks due to its use of a dual-branch transformer and multi-head attention.
+
+
+<details><summary>Details of this method</summary>
+
+  | Paper     | Original Code |
+  |-----------|---------------|
+  |[Link](https://arxiv.org/pdf/1909.11740)|[Link](https://github.com/ChenRocks/UNITER)|
+  
+
+</details>
+
+
 ---
 
 ## 📦 Installation
@@ -149,13 +244,15 @@ We strongly recommend that you install AK_SSL in a dedicated virtualenv, to avoi
 
 Using AK_SSL, you have the flexibility to leverage the most recent self-supervised learning techniques seamlessly, harnessing the complete capabilities of PyTorch. You can explore diverse backbones, models, and optimizer while benefiting from a user-friendly framework that has been purposefully crafted for ease of use.
 
+
+### Initializing the Trainer for Vision Models
+
 You can easily import Trainer module from AK_SSL library and start utilizing it right away.
 
 ```python
-from AK_SSL import Trainer
+from AK_SSL.vision import Trainer
 ```
 
-### Initializing the Trainer
 Now, let's initialize the self-supervised trainer with our chosen method, backbone, dataset, and other configurations.
 
 ```python
@@ -163,7 +260,6 @@ trainer = Trainer(
     method="barlowtwins",           # training method as string (BarlowTwins, BYOL, DINO, MoCov2, MoCov3, SimCLR, SimSiam, SwAV)
     backbone=backbone,              # backbone architecture as torch.Module
     feature_size=feature_size,      # size of the extracted features as integer
-    dataset=train_dataset,          # training dataset as torch.utils.data.Dataset
     image_size=32,                  # dataset image size as integer
     save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
     checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
@@ -304,12 +400,136 @@ Note: The use of **kwargs can differ between methods, depending on the specific 
   </details>
 
 
-### Training the Self-Supervised Model
+### Initializing the Trainer for Multimodal Models
+
+You can easily import Trainer module from AK_SSL library and start utilizing it right away.
+
+```python
+from AK_SSL.multimodal import Trainer
+```
+
+Now, let's initialize the self-supervised trainer with our chosen method, backbone, dataset, and other configurations.
+
+```python
+trainer = Trainer(
+    method="clip",                  # training method as string (CLIP, ALBEF, SLIP, SimVLM, UNITER, VSE)
+    image_encoder=img_encoder,      # vision model to extract image features as nn.Module
+    text_encoder=txt_encoder,       # text model to extract text features as nn.Module
+    mixed_precision_training=True,  # whether to use mixed precision training or not as boolean
+    save_dir="./save_for_report/",  # directory to save training checkpoints and Tensorboard logs as string
+    checkpoint_interval=50,         # interval (in epochs) for saving checkpoints as integer
+    reload_checkpoint=False,        # reload a previously saved checkpoint as boolean
+    verbose=True,                   # enable verbose output for training progress as a boolean
+    **kwargs                        # other arguments 
+)
+```
+Note: The use of **kwargs can differ between methods, depending on the specific method, loss function, transformation, and other factors. If you are utilizing any of the objectives listed below, you must provide their arguments during the initialization of the Trainer class.
+
+- <details><summary>CLIP</summary>
+  
+  ```
+    image_feature_dim         # Dimension of the image features as integer
+    text_feature_dim          # Dimension of the text features as integer
+    embed_dim                 # Dimension of the embeddings as integer
+    init_tau                  # Initial value of tau as float
+    init_b                    # Initial value of b as float
+  ```
+  
+  </details>
+
+
+- <details><summary>ALBEF</summary>
+  
+  ```
+    mlm_probability           # Masked language modeling probability as float
+    embed_dim                 # Dimension of the embeddings as integer
+    vision_width              # Vision encoder output width as integer
+    temp                      # Temperature parameter as float
+    queue_size                # Queue size as integer
+    momentum                  # Momentum parameter as float
+  ```
+  
+  </details>
+
+
+- <details><summary>SimVLM</summary>
+  
+  ```
+    transformer_encoder       # Transformer encoder for vision and text embeddings as nn.Module
+    transformer_decoder       # Transformer decoder for embeddings as nn.Module
+    vocab_size                # Size of the vocabulary as integer
+    feature_dim               # Dimension of the features as integer
+    max_seq_len               # Maximum sequence length as integer
+    max_trunc_txt_len         # Maximum truncated text length as integer
+    prefix_txt_len            # Prefix text length as integer
+    target_txt_len            # Target text length as integer
+    pad_idx                   # Padding index as integer
+    image_resolution          # Image resolution as integer
+    patch_size                # Patch size as integer
+    num_channels              # Number of channels as integer
+  ```
+  
+  </details>
+
+
+- <details><summary>SLIP</summary>
+  
+  ```
+    mlp_dim                   # Dimension of the MLP as integer
+    vision_feature_dim        # Dimension of the vision features as integer
+    transformer_feature_dim   # Dimension of the transformer features as integer
+    embed_dim                 # Dimension of the embeddings as integer
+  ```
+  
+  </details>
+
+
+- <details><summary>UNITER</summary>
+  
+  ```
+    pooler                          # pooler as nn.Module
+    encoder                         # transformer encoder as nn.Module
+    num_answer                      # number of answer classes as integer
+    hidden_size                     # hidden size as integer
+    attention_probs_dropout_prob    # dropout rate as float
+    initializer_range               # initializer range as float
+  ```
+  
+  </details>
+
+
+- <details><summary>VSE</summary>
+  
+  ```
+    margin                   # Margin for contrastive loss as float
+  ```
+  
+  </details>
+
+
+### Training the Self-Supervised Model for Vision Models
 
 Then, we'll train the self-supervised model using the specified parameters.
 
 ```python
-  trainer.train(               
+  trainer.train(
+      dataset=train_dataset,          # training dataset as torch.utils.data.Dataset               
+      batch_size=256,          # the number of training examples used in each iteration as integer
+      start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
+      epochs=100,              # the total number of training epochs as integer
+      optimizer="Adam",        # the optimization algorithm used for training as string (Adam, SGD, or AdamW)
+      weight_decay=1e-6,       # a regularization term to prevent overfitting by penalizing large weights as float
+      learning_rate=1e-3,      # the learning rate for the optimizer as float
+)
+```
+
+### Training the Self-Supervised Model for Multimodal Models
+
+Then, we'll train the self-supervised model using the specified parameters.
+
+```python
+  trainer.train(
+      dataset=train_dataset,           # the training data set as torch.utils.data.Dataset             
       batch_size=256,          # the number of training examples used in each iteration as integer
       start_epoch=1,           # the starting epoch for training as integer (if 'reload_checkpoint' parameter was True, start epoch equals to the latest checkpoint epoch)
       epochs=100,              # the total number of training epochs as integer
@@ -320,7 +540,7 @@ Then, we'll train the self-supervised model using the specified parameters.
 ```
 
 
-### Evaluating th Self-Supervised Model
+### Evaluating the Vision Self-Supervised Models
 This evaluation assesses how well the pre-trained model performs on a dataset, specifically for tasks related to linear evaluation.
 ```python
 trainer.evaluate(
@@ -333,11 +553,11 @@ trainer.evaluate(
     weight_decay=1e-6,                # a regularization term applied during evaluation to prevent overfitting as float
     learning_rate=1e-3,               # the learning rate for the optimizer during evaluation as float
     batch_size=256,                   # the batch size used for evaluation in integer
-    fine_tuning_data_proportion=1,    # the proportion of training data to use during evalutation as float in range of (0.0, 1]
+    fine_tuning_data_proportion=1,    # the proportion of training data to use during evaluation as float in range of (0.0, 1]
 )
 ```
 
-### Get the Self-Supervised Model backbone
+### Get the Vision Self-Supervised Models backbone
 
 In case you want to use the pre-trained network in your own downstream task, you need to define a downstream task model. This model should include the self-supervised model backbone as one of its components. Here's an example of how to define a simple downstream model class:
 

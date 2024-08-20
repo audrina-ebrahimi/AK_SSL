@@ -1,6 +1,7 @@
 import os
 import re
 import torch
+import numpy as np
 from torch import nn
 from tqdm.auto import tqdm
 from datetime import datetime
@@ -10,9 +11,9 @@ from torcheval.metrics.functional import multiclass_accuracy
 from torch.utils.tensorboard import SummaryWriter
 
 
-from AK_SSL.models import *
-from AK_SSL.models.modules.losses import *
-from AK_SSL.models.modules.transformations import *
+from AK_SSL.vision.models import *
+from AK_SSL.vision.models.modules.losses import *
+from AK_SSL.vision.models.modules.transformations import *
 
 
 class Trainer:
@@ -21,38 +22,56 @@ class Trainer:
         method: str,
         backbone: nn.Module,
         feature_size: int,
-        dataset: torch.utils.data.Dataset,
         image_size: int,
         save_dir: str = ".",
         checkpoint_interval: int = 10,
         reload_checkpoint: bool = False,
         verbose: bool = True,
+        mixed_precision_training: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         """
         Description:
-            Trainer class to train the model with self-supervised methods.
+            Trainer class for training a model using self-supervised learning methods. This class manages the
+            training loop, model saving, and supports advanced features such as mixed precision training and
+            checkpointing.
 
         Args:
-            method (str): Self-supervised method to use. Options: [BarlowTwins, BYOL, DINO, MoCov2, MoCov3, SimCLR, SimSiam, SwAV]
-            backbone (nn.Module): Backbone to use.
-            feature_size (int): Feature size.
-            dataset (torch.utils.data.Dataset): Dataset to use.
-            image_size (int): Image size.
-            save_dir (str): Directory to save the model.
-            checkpoint_interval (int): Interval to save the model.
-            reload_checkpoint (bool): Whether to reload the checkpoint.
-            **kwargs: Keyword arguments.
+            method (str): The self-supervised learning method to be used for training.
+                          Available options include:
+                          - 'BarlowTwins'
+                          - 'BYOL'
+                          - 'DINO'
+                          - 'MoCov2'
+                          - 'MoCov3'
+                          - 'SimCLR'
+                          - 'SimSiam'
+                          - 'SwAV'
+            backbone (nn.Module): The neural network module serving as the backbone of the model.
+            feature_size (int): The dimensionality of the feature vector output by the backbone model.
+            image_size (int): The dimensions (height, width) of the input images. This is generally expected to
+                              be a square (i.e., height equals width).
+            save_dir (str): Path to the directory where model checkpoints and logs will be saved. Defaults to
+                            the current directory ("./").
+            checkpoint_interval (int): Frequency (in epochs) at which model checkpoints are saved. For example,
+                                        if set to 10, the model will be saved every 10 epochs.
+            reload_checkpoint (bool): If set to True, training will resume from the latest checkpoint available
+                                      in the `save_dir`. If False, training will start from scratch.
+            verbose (bool): If True, detailed logs and progress updates will be printed during training.
+            mixed_precision_training (bool): If True, mixed precision (using both 16-bit and 32-bit floats)
+                                             will be used during training to improve performance and reduce memory usage.
+            **kwargs: Additional keyword arguments for extending functionality or overriding default settings
+                      specific to the training method or the backbone architecture.
         """
 
         self.method = method
-        self.dataset = dataset
         self.image_size = image_size
         self.backbone = backbone
         self.feature_size = feature_size
         self.reload_checkpoint = reload_checkpoint
         self.checkpoint_interval = checkpoint_interval
         self.verbose = verbose
+        self.mixed_precision_training = mixed_precision_training
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -68,7 +87,7 @@ class Trainer:
         self.num_workers = os.cpu_count()
 
         if self.verbose:
-            print("----------------AK_SSL----------------")
+            print("----------------AK_SSL: Vision----------------")
             print("Number of workers:", self.num_workers)
             print("Device:", self.device)
             print("--------------------------------------")
@@ -208,7 +227,7 @@ class Trainer:
                 self.model = SwAV(self.backbone, self.feature_size, **kwargs)
                 self.loss = SwAVLoss(self.model.num_crops + 2, **kwargs)
                 self.transformation_global = SimCLRViewTransform(
-                    imgage_size=self.image_size, **kwargs
+                    image_size=self.image_size, **kwargs
                 )
                 self.transformation_local = self.transformation_global
                 if self.verbose:
@@ -220,17 +239,20 @@ class Trainer:
                     print("Transformation local: SimCLRViewTransform")
 
             case _:
-                raise Exception("Method not found.")
-
-        if self.verbose:
-            print("--------------------------------------")
-            print(self.dataset)
-            print("--------------------------------------")
+                raise ValueError(f"Method {self.method} not supported")
 
         self.model = self.model.to(self.device)
         self.loss = self.loss.to(self.device)
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.writer = SummaryWriter("{}/Logs/{}".format(self.save_dir, self.timestamp))
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
+
+        if self.verbose:
+            print(
+                "Model parameters:",
+                f"{np.sum([int(np.prod(p.shape)) for p in self.model.parameters()]):,}",
+            )
+            print("--------------------------------------")
 
     def __del__(self):
         self.writer.close()
@@ -243,37 +265,42 @@ class Trainer:
         for images, _ in tepoch:
             images = images.to(self.device)
             if self.method.lower() in ["barlowtwins", "byol", "mocov3"]:
-                view0 = self.transformation(images)
-                view1 = self.transformation_prime(images)
-                z0, z1 = self.model(view0, view1)
-                loss = self.loss(z0, z1)
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                    view0 = self.transformation(images)
+                    view1 = self.transformation_prime(images)
+                    z0, z1 = self.model(view0, view1)
+                    loss = self.loss(z0, z1)
             elif self.method.lower() in ["dino"]:
-                view0 = self.transformation_global1(images)
-                view1 = self.transformation_global2(images)
-                viewc = []
-                if self.model.num_crops > 0:
-                    for _ in range(self.model.num_crops):
-                        viewc.append(self.transformation_local(images))
-                z0, z1 = self.model(view0, view1, viewc)
-                loss = self.loss(z0, z1)
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                    view0 = self.transformation_global1(images)
+                    view1 = self.transformation_global2(images)
+                    viewc = []
+                    if self.model.num_crops > 0:
+                        for _ in range(self.model.num_crops):
+                            viewc.append(self.transformation_local(images))
+                    z0, z1 = self.model(view0, view1, viewc)
+                    loss = self.loss(z0, z1)
             elif self.method.lower() in ["swav"]:
-                view0 = self.transformation_global(images)
-                view1 = self.transformation_global(images)
-                viewc = []
-                if self.model.num_crops > 0:
-                    for _ in range(self.model.num_crops):
-                        viewc.append(self.transformation_local(images))
-                z0, z1 = self.model(view0, view1, viewc)
-                loss = self.loss(z0, z1)
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                    view0 = self.transformation_global(images)
+                    view1 = self.transformation_global(images)
+                    viewc = []
+                    if self.model.num_crops > 0:
+                        for _ in range(self.model.num_crops):
+                            viewc.append(self.transformation_local(images))
+                    z0, z1 = self.model(view0, view1, viewc)
+                    loss = self.loss(z0, z1)
             else:
-                view0 = self.transformation(images)
-                view1 = self.transformation(images)
-                z0, z1 = self.model(view0, view1)
-                loss = self.loss(z0, z1)
+                with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                    view0 = self.transformation(images)
+                    view1 = self.transformation(images)
+                    z0, z1 = self.model(view0, view1)
+                    loss = self.loss(z0, z1)
 
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            self.scaler.scale(loss).backward()
+            self.scaler.step(optimizer)
+            self.scaler.update()
             loss_hist_train += loss.item()
             tepoch.set_postfix(loss=loss.item())
 
@@ -281,6 +308,7 @@ class Trainer:
 
     def train(
         self,
+        dataset: torch.utils.data.Dataset,
         batch_size: int = 256,
         start_epoch: int = 1,
         epochs: int = 100,
@@ -293,6 +321,7 @@ class Trainer:
             Train the model.
 
         Args:
+            dataset (torch.utils.data.Dataset): Dataset to train.
             batch_size (int): Batch size.
             start_epoch (int): Epoch to start the training.
             epochs (int): Number of epochs.
@@ -300,21 +329,28 @@ class Trainer:
             weight_decay (float): Weight decay.
             learning_rate (float): Learning rate.
         """
+        self.dataset = dataset
         match optimizer.lower():
             case "adam":
                 optimizer = torch.optim.Adam(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case "sgd":
                 optimizer = torch.optim.SGD(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case "adamw":
                 optimizer = torch.optim.AdamW(
-                    self.model.parameters(), lr=learning_rate, weight_decay=weight_decay
+                    list(self.model.parameters()),
+                    lr=learning_rate,
+                    weight_decay=weight_decay,
                 )
             case _:
-                raise Exception("Optimizer not found.")
+                raise ValueError(f"Optimizer {optimizer} not supported")
 
         train_loader = torch.utils.data.DataLoader(
             self.dataset, batch_size=batch_size, shuffle=True, drop_last=True
@@ -426,7 +462,7 @@ class Trainer:
                     net.parameters(), lr=learning_rate, weight_decay=weight_decay
                 )
             case _:
-                raise Exception("Optimizer not found.")
+                raise ValueError(f"Optimizer {optimizer} not supported")
 
         net = net.to(self.device)
         criterion = nn.CrossEntropyLoss()
@@ -436,6 +472,7 @@ class Trainer:
         )
 
         net.train(True)
+        scaler_eval = torch.cuda.amp.GradScaler(enabled=self.mixed_precision_training)
 
         for epoch in tqdm(
             range(epochs),
@@ -453,9 +490,9 @@ class Trainer:
                     images = images.to(self.device)
                     labels = labels.to(self.device)
 
-                    # zero the parameter gradients
-                    optimizer_eval.zero_grad()
-                    outputs = net(images)
+                    with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
+                        outputs = net(images)
+                        loss = criterion(outputs, labels)
 
                     _, predicted = torch.max(outputs.data, 1)
                     total += labels.size(0)
@@ -463,12 +500,12 @@ class Trainer:
                     acc = 100 * correct / total
                     acc_hist_train += acc
 
-                    # compute loss
-                    loss = criterion(outputs, labels)
                     tepoch_ds.set_postfix(loss=loss.item(), accuracy=f"{acc:.2f}")
                     loss_hist_train += loss.item()
-                    loss.backward()
-                    optimizer_eval.step()
+                    optimizer_eval.zero_grad()
+                    scaler_eval.scale(loss).backward()
+                    scaler_eval.step(optimizer_eval)
+                    scaler_eval.update()
 
                 self.writer.add_scalar(
                     "Downstream Task/Loss/train",
@@ -523,7 +560,7 @@ class Trainer:
         )
 
         if len(sorted_checkpoints) == 0:
-            raise Exception("No checkpoints found.")
+            raise ValueError("No checkpoints found in the directory")
 
         self.load_checkpoint(sorted_checkpoints[-1])
 
@@ -533,6 +570,6 @@ class Trainer:
             if self.verbose:
                 print(f"Starting Epoch: {epoch}")
         else:
-            raise Exception("Epoch not found in file name.")
+            raise ValueError("No epoch number found in the checkpoint name.")
 
         return epoch
