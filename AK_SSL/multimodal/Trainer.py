@@ -95,7 +95,10 @@ class Trainer:
 
             case "albef":
                 self.model = ALBEF(
-                    image_encoder=image_encoder, text_encoder=text_encoder, device=self.device, **kwargs
+                    image_encoder=image_encoder,
+                    text_encoder=text_encoder,
+                    device=self.device,
+                    **kwargs,
                 )
                 if self.verbose:
                     print("MLM Probability:", self.model.mlm_probability)
@@ -317,7 +320,10 @@ class Trainer:
                 alpha = self.model.alpha * min(1, step / len(tepoch))
             with torch.cuda.amp.autocast(enabled=self.mixed_precision_training):
                 loss_mlm, loss_ita, loss_itm = self.model(
-                    text=batch["text"], image=batch["image"], alpha=alpha
+                    image=batch["image"],
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    alpha=alpha,
                 )
                 loss = loss_mlm + loss_ita + loss_itm
 
