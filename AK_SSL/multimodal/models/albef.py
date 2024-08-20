@@ -31,7 +31,7 @@ class ALBEF(nn.Module):
         queue_size: int = 1024,
         momentum: float = 0.9,
         alpha: float = 0.4,
-        device: str = 'cpu',
+        device: str = "cpu",
     ):
         """
         Initializes the ALBEF model with the given parameters.
@@ -62,6 +62,9 @@ class ALBEF(nn.Module):
         self.image_encoder = image_encoder
         self.text_encoder = text_encoder
 
+        self.vision_width = self.image_feature_dim
+        self.text_width = text_feature_dim
+
         self.text_feature_dim = text_feature_dim
         self.mlm_probability = mlm_probability
         self.embed_dim = embed_dim
@@ -70,9 +73,6 @@ class ALBEF(nn.Module):
         self.momentum = momentum
         self.alpha = alpha
         self.itm_head = nn.Linear(self.text_width, 2)
-
-        self.vision_width = self.image_feature_dim
-        self.text_width = text_feature_dim
 
         # Projection layers to align vision and text features to the same embedding dimension
         self.vision_proj = nn.Linear(self.vision_width, self.embed_dim)
@@ -219,7 +219,7 @@ class ALBEF(nn.Module):
         image_embeds_all = torch.cat([image_embeds_neg, image_embeds], dim=0)
         image_atts_all = torch.cat([image_atts, image_atts], dim=0)
 
-        output_neg = self.text_encoder.bert(
+        output_neg = self.text_encoder(
             encoder_embeds=text_embeds_all,
             attention_mask=text_atts_all,
             encoder_hidden_states=image_embeds_all,
@@ -335,7 +335,7 @@ class ALBEF(nn.Module):
         encoder.eval()
         dummy_input = torch.randn(1, 3, 32, 32)  # Create a dummy input for the encoder
         with torch.no_grad():
-            output = encoder(dummy_input).to(self.device)  # Get the output features from the encoder
+            output = encoder(dummy_input)  # Get the output features from the encoder
         return output.shape[1]  # Return the dimensionality of the output features
 
 
