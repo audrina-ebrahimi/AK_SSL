@@ -41,44 +41,44 @@ Self-supervised learning is a subfield of machine learning where models are trai
 
 ## 🔎 Supported Methods
 
-### [BarlowTwins](./AK_SSL/models/barlowtwins.py)
+### [BarlowTwins](./AK_SSL/vision/models/barlowtwins.py)
 Barlow Twins is a self-supervised learning method that aims to learn embeddings invariant to distortions of the input sample. It achieves this by applying two distinct sets of augmentations to the same input sample, resulting in two distorted views of the same image. The objective function measures the cross-correlation matrix between the outputs of two identical networks fed with these distorted sample versions, striving to make it as close to the identity matrix as possible. This causes the embedding vectors of the distorted sample versions to become similar while minimizing redundancy among the components of these vectors. Barlow Twins particularly benefits from utilizing high-dimensional output vectors.
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation     | Transformation Prime | Projection Head         | Paper     | Original Code |
   |--------------|--------------------|----------------------|-------------------------|-----------|---------------|
-  |[BarlowTwins Loss](./AK_SSL/models/modules/losses/barlow_twins_loss.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2103.03230v3)|[Link](https://github.com/facebookresearch/barlowtwins)|
+  |[BarlowTwins Loss](./AK_SSL/vision/models/modules/losses/barlow_twins_loss.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2103.03230v3)|[Link](https://github.com/facebookresearch/barlowtwins)|
   
   
   BarlowTwins Loss is inspired by [HSIC loss](https://github.com/yaohungt/Barlow-Twins-HSIC).
 
 </details>
 
-### [BYOL](./AK_SSL/models/byol.py)
+### [BYOL](./AK_SSL/vision/models/byol.py)
 BYOL (Bootstrap Your Own Latent) is one of the new approaches to self-supervised learning. Like other methods, BYOL aims to learn a representation that can be utilized for downstream tasks. It employs two neural networks for learning: the online and target networks. The online network is trained to predict the target network's representation of the same image from a different augmented view. Simultaneously, the target network is updated with a slow-moving average of the online network's parameters. While state-of-the-art methods rely on negative pairs, BYOL achieves a new state of the art without them. It directly minimizes the similarity between the representations of the same image from different augmented views (positive pair).
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation     | Transformation Prime | Projection Head         | Prediction Head         | Paper     | Original Code |
   |--------------|--------------------|----------------------|-------------------------|-------------------------|-----------|---------------|
-  |[BYOL Loss](./AK_SSL/models/modules/losses/byol_loss.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/models/modules/heads.py)|[BarlowTwins Prediction Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.07733)|[Link](https://github.com/deepmind/deepmind-research/tree/master/byol)|
+  |[BYOL Loss](./AK_SSL/vision/models/modules/losses/byol_loss.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[BarlowTwins Projection Head](./AK_SSL/vision/models/modules/heads.py)|[BarlowTwins Prediction Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.07733)|[Link](https://github.com/deepmind/deepmind-research/tree/master/byol)|
   
 
 </details>
 
-### [DINO](./AK_SSL/models/dino.py)
+### [DINO](./AK_SSL/vision/models/dino.py)
 DINO (self-distillation with no labels) is a self-supervised learning method that directly predicts the output of a teacher network—constructed with a momentum encoder—by utilizing a standard cross-entropy loss. It is an innovative self-supervised learning algorithm developed by Facebook AI. Through the utilization of self-supervised learning with Transformers, DINO paves the way for creating machines that can comprehend images and videos at a much deeper level.
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation Global 1 | Transformation Global 2 |Transformation Local | Projection Head    | Paper  | Original Code |
   |--------------|-------------------------|-------------------------|---------------------|--------------------|--------|---------------|
-  |[DINO Loss](./AK_SSL/models/modules/losses/dino_loss.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[DINO Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2304.07193)|[Link](https://github.com/facebookresearch/dinov2)|
+  |[DINO Loss](./AK_SSL/vision/models/modules/losses/dino_loss.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[DINO Projection Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2304.07193)|[Link](https://github.com/facebookresearch/dinov2)|
   
 </details>
 
-### [MoCos](./AK_SSL/models/moco.py)
+### [MoCos](./AK_SSL/vision/models/moco.py)
 MoCo, short for Momentum Contrast, is a self-supervised learning algorithm that employs a contrastive loss. MoCo v2 represents an enhanced iteration of the original Momentum Contrast self-supervised learning algorithm. Motivated by the findings outlined in the SimCLR paper, the authors introduced several modifications in MoCo v1, which included replacing the 1-layer fully connected layer with a 2-layer MLP head featuring ReLU activation for the unsupervised training stage. Additionally, they incorporated blur augmentation and adopted a cosine learning rate schedule. These adjustments enabled MoCo to outperform the state-of-the-art SimCLR, even when utilizing a smaller batch size and fewer epochs.
 
 MoCo v3, introduced in the paper "An Empirical Study of Training Self-Supervised Vision Transformers," represents another advancement in self-supervised learning. It builds upon the foundation of MoCo v1 / MoCo v2 and addresses the instability issue observed when employing ViT for self-supervised learning.
@@ -89,43 +89,43 @@ In contrast to MoCo v2, MoCo v3 adopts a different approach where the keys natur
 
   | Method | Loss         | Transformation |Transformation Prime | Projection Head    | Prediction Head    | Paper  | Original Code |
   |--------|--------------|----------------|---------------------|--------------------|--------------------|--------|---------------|
-  |MoCo v2|InfoNCE|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|None|[SimCLR Projection Head](./AK_SSL/models/modules/heads.py)|None|[Link](https://arxiv.org/abs/2003.04297)|[Link](https://github.com/facebookresearch/moco)|
-  |MoCo v3|[InfoNCE](./AK_SSL/models/modules/losses/info_nce.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Projection Head](./AK_SSL/models/modules/heads.py)|[BYOL Prediction Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2104.02057)|[Link](https://github.com/facebookresearch/moco-v3)|
+  |MoCo v2|InfoNCE|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|None|[SimCLR Projection Head](./AK_SSL/vision/models/modules/heads.py)|None|[Link](https://arxiv.org/abs/2003.04297)|[Link](https://github.com/facebookresearch/moco)|
+  |MoCo v3|[InfoNCE](./AK_SSL/vision/models/modules/losses/info_nce.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Projection Head](./AK_SSL/vision/models/modules/heads.py)|[BYOL Prediction Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2104.02057)|[Link](https://github.com/facebookresearch/moco-v3)|
   
 </details>
 
-### [SimCLRs](./AK_SSL/models/simclr.py)
+### [SimCLRs](./AK_SSL/vision/models/simclr.py)
 SimCLR (Simple Framework for Contrastive Learning of Representations) is a self-supervised technique used to learn image representations. The fundamental building blocks of contrastive self-supervised methods, such as SimCLR, are image transformations. Each image is transformed into multiple new images through randomly applied augmentations. The goal of the self-supervised model is to identify images that originate from the same original source among a set of negative examples. SimCLR operates on the principle of maximizing the similarity between positive pairs of augmented images while minimizing the similarity with negative pairs. The training process can be summarized as follows: Data Augmentation - SimCLR employs robust data augmentation techniques to generate multiple augmented versions of each input image.
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation     | Projection Head         | Paper     | Original Code |
   |--------------|--------------------|-------------------------|-----------|---------------|
-  |[NT_Xent](./AK_SSL/models/modules/losses/nt_xent.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.10029)|[Link](https://github.com/google-research/simclr)|
+  |[NT_Xent](./AK_SSL/vision/models/modules/losses/nt_xent.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Projection Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.10029)|[Link](https://github.com/google-research/simclr)|
 
   
 </details>
 
-### [SimSiam](./AK_SSL/models/simsiam.py)
+### [SimSiam](AK_SSL/vision/models/simsiam.py)
 SimSiam is a self-supervised representation learning model that was proposed by Facebook AI Research (FAIR). It is a simple Siamese network designed to learn meaningful representations without requiring negative sample pairs, large batches, or momentum encoders.
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation     | Projection Head         | Prediction Head         | Paper     | Original Code |
   |--------------|--------------------|-------------------------|-------------------------|-----------|---------------|
-  |[Negative Cosine Similarity](./AK_SSL/models/modules/losses/negative_cosine_similarity.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimSiam Projection Head](./AK_SSL/models/modules/heads.py)|[SimSiam Prediction Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2011.10566)|[Link](https://github.com/facebookresearch/simsiam)|
+  |[Negative Cosine Similarity](./AK_SSL/vision/models/modules/losses/negative_cosine_similarity.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimSiam Projection Head](./AK_SSL/vision/models/modules/heads.py)|[SimSiam Prediction Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2011.10566)|[Link](https://github.com/facebookresearch/simsiam)|
   
 
 </details>
 
-### [SwAV](./AK_SSL/models/swav.py)
+### [SwAV](AK_SSL/vision/models/swav.py)
 SwAV, or Swapping Assignments Between Views, is a self-supervised learning approach that takes advantage of contrastive methods without requiring to compute pairwise comparisons. Specifically, it simultaneously clusters the data while enforcing consistency between cluster assignments produced for different augmentations (or views) of the same image, instead of comparing features directly as in contrastive learning. Simply put, SwAV uses a swapped prediction mechanism where we predict the cluster assignment of a view from the representation of another view.
 
 <details><summary>Details of this method</summary>
 
   | Loss         | Transformation Global| Transformation Local | Projection Head         | Paper     | Original Code |
   |--------------|----------------------|----------------------|-------------------------|-----------|---------------|
-  |[SwAV Loss](./AK_SSL/models/modules/losses/swav.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/models/modules/transformations/simclr.py)|[SwAV Projection Head](./AK_SSL/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.09882)|[Link](https://github.com/facebookresearch/swav)|
+  |[SwAV Loss](./AK_SSL/vision/models/modules/losses/swav_loss.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SimCLR Transformation](./AK_SSL/vision/models/modules/transformations/simclr.py)|[SwAV Projection Head](./AK_SSL/vision/models/modules/heads.py)|[Link](https://arxiv.org/abs/2006.09882)|[Link](https://github.com/facebookresearch/swav)|
   
 
 </details>
