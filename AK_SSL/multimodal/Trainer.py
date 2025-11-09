@@ -1,12 +1,15 @@
 import os
 import re
+from datetime import datetime
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
-from tqdm import tqdm
-from datetime import datetime
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 from torch.nn.utils.clip_grad import clip_grad_norm_
+from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from AK_SSL.multimodal.models import *
 from AK_SSL.vision.models.modules.losses.nt_xent import NT_Xent
@@ -21,6 +24,7 @@ class Trainer:
         text_encoder: nn.Module,
         mixed_precision_training: bool = True,
         save_dir: str = ".",
+        wandb_run: Optional["wandb.sdk.wandb_run.Run"] = None,
         checkpoint_interval: int = 10,
         reload_checkpoint: bool = False,
         verbose: bool = True,
@@ -39,6 +43,9 @@ class Trainer:
                                                        and potentially speed up training. Defaults to True.
             save_dir (str, optional): The directory path where model checkpoints will be saved during training.
                                       Defaults to the current directory ("./").
+            wandb_run (Optional["wandb.sdk.wandb_run.Run"]): An optional Weights & Biases run object for logging
+                                                             and visualization. If provided, training metrics
+                                                             will be logged to this run.
             checkpoint_interval (int, optional): The number of training epochs between saving model checkpoints.
                                                  Defaults to 10.
             reload_checkpoint (bool, optional): If True, attempts to reload the most recent checkpoint from `save_dir`
@@ -55,6 +62,9 @@ class Trainer:
         self.reload_checkpoint = reload_checkpoint
         self.verbose = verbose
         self.mixed_precision_training = mixed_precision_training
+
+        # store the optional wandb run (returned by `wandb.init()`)
+        self.wandb_run = wandb_run
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -191,6 +201,8 @@ class Trainer:
 
     def __del__(self):
         self.writer.close()
+        if self.wandb_run is not None:
+            wandb.finish()
 
     def _train_clip(self, tepoch, optimizer):
         epoch_loss = 0.0
@@ -419,6 +431,15 @@ class Trainer:
                         loss_per_epoch = self._train_clip(tepoch, optimizer)
                         lr_scheduler.step()
 
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
+
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
                         loss_per_epoch / len(train_loader),
@@ -447,6 +468,15 @@ class Trainer:
                         tepoch.set_description(f"Epoch {epoch + 1}")
                         loss_per_epoch = self._train_slip(tepoch, optimizer)
                         lr_scheduler.step()
+
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
@@ -477,6 +507,15 @@ class Trainer:
                         loss_per_epoch = self._train_albef(tepoch, optimizer, epoch)
                         lr_scheduler.step()
 
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
+
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
                         loss_per_epoch / len(train_loader),
@@ -505,6 +544,15 @@ class Trainer:
                         loss_per_epoch = self._train_simvlm(tepoch, optimizer)
                         lr_scheduler.step()
 
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
+
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
                         loss_per_epoch / len(train_loader),
@@ -528,6 +576,15 @@ class Trainer:
                         tepoch.set_description(f"Epoch {epoch + 1}")
                         loss_per_epoch = self._train_unitervqa(tepoch, optimizer)
 
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
+
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",
                         loss_per_epoch / len(train_loader),
@@ -550,6 +607,15 @@ class Trainer:
                     with tqdm(train_loader, unit="batch", leave=False) as tepoch:
                         tepoch.set_description(f"Epoch {epoch + 1}")
                         loss_per_epoch = self._train_vse(tepoch, optimizer)
+
+                    if self.wandb_run is not None:
+                        self.wandb_run.log(
+                            {
+                                f"{self.method.upper()}/Train/Loss": loss_per_epoch
+                                / len(train_loader),
+                                "epoch": epoch + 1,
+                            }
+                        )
 
                     self.writer.add_scalar(
                         f"{self.method.upper()}/Train/Loss",

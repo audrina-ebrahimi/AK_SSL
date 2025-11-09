@@ -1,17 +1,16 @@
 import os
 import re
-from typing import Optional
-import torch
-import numpy as np
-from torch import nn
-from tqdm.auto import tqdm
-import wandb
 from datetime import datetime
+from typing import Optional
+
+import numpy as np
+import torch
+import wandb
+from torch import nn
 from torch.utils.data import Subset
-from torcheval.metrics.functional import multiclass_accuracy
-
 from torch.utils.tensorboard import SummaryWriter
-
+from torcheval.metrics.functional import multiclass_accuracy
+from tqdm.auto import tqdm
 
 from AK_SSL.vision.models import *
 from AK_SSL.vision.models.modules.losses import *
