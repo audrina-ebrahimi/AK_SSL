@@ -1,9 +1,11 @@
 import os
 import re
+from typing import Optional
 import torch
 import numpy as np
 from torch import nn
 from tqdm.auto import tqdm
+import wandb
 from datetime import datetime
 from torch.utils.data import Subset
 from torcheval.metrics.functional import multiclass_accuracy
@@ -24,6 +26,7 @@ class Trainer:
         feature_size: int,
         image_size: int,
         save_dir: str = ".",
+        wandb_run: Optional["wandb.sdk.wandb_run.Run"] = None,
         checkpoint_interval: int = 10,
         reload_checkpoint: bool = False,
         verbose: bool = True,
@@ -53,6 +56,9 @@ class Trainer:
                               be a square (i.e., height equals width).
             save_dir (str): Path to the directory where model checkpoints and logs will be saved. Defaults to
                             the current directory ("./").
+            wandb_run (Optional["wandb.sdk.wandb_run.Run"]): An optional Weights & Biases run object for logging
+                                                             and visualization. If provided, training metrics
+                                                             will be logged to this run.
             checkpoint_interval (int): Frequency (in epochs) at which model checkpoints are saved. For example,
                                         if set to 10, the model will be saved every 10 epochs.
             reload_checkpoint (bool): If set to True, training will resume from the latest checkpoint available
@@ -72,6 +78,9 @@ class Trainer:
         self.checkpoint_interval = checkpoint_interval
         self.verbose = verbose
         self.mixed_precision_training = mixed_precision_training
+
+        # store the optional wandb run (returned by `wandb.init()`)
+        self.wandb_run = wandb_run
 
         self.save_dir = save_dir + f"/{self.method}/"
 
@@ -256,6 +265,8 @@ class Trainer:
 
     def __del__(self):
         self.writer.close()
+        if self.wandb_run is not None:
+            wandb.finish()
 
     def get_backbone(self):
         return self.model.backbone
@@ -371,12 +382,19 @@ class Trainer:
                 tepoch.set_description(f"Epoch {epoch + 1}")
                 loss_per_epoch = self.train_one_epoch(tepoch, optimizer)
 
+            if self.wandb_run is not None:
+                self.wandb_run.log(
+                    {
+                        "Pretext Task/Loss/train": loss_per_epoch / len(train_loader),
+                        "epoch": epoch + 1,
+                    }
+                )
+
             self.writer.add_scalar(
                 "Pretext Task/Loss/train",
                 loss_per_epoch / len(train_loader),
                 epoch + 1,
             )
-
             self.writer.flush()
             if (epoch + 1) % self.checkpoint_interval == 0:
                 model_path = self.checkpoint_path + "{}_model_{}_epoch{}.pth".format(
@@ -506,6 +524,17 @@ class Trainer:
                     scaler_eval.scale(loss).backward()
                     scaler_eval.step(optimizer_eval)
                     scaler_eval.update()
+
+                if self.wandb_run is not None:
+                    self.wandb_run.log(
+                        {
+                            "Downstream Task/Loss/train": loss_hist_train
+                            / len(train_loader_ds),
+                            "Downstream Task/Accuracy/train": acc_hist_train
+                            / len(train_loader_ds),
+                            "epoch": epoch + 1,
+                        }
+                    )
 
                 self.writer.add_scalar(
                     "Downstream Task/Loss/train",

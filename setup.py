@@ -34,6 +34,7 @@ if __name__ == "__main__":
         "torcheval",
         "tqdm",
         "tensorboard",
+        "wandb",
         "einops",
         "axial_positional_embedding",
     ]
