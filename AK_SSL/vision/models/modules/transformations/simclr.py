@@ -1,9 +1,8 @@
-from typing import Union
+from typing import List, Optional, Tuple, Union
 
 import torchvision.transforms as T
 from PIL.Image import Image
 from torch import Tensor
-from typing import List, Optional, Tuple, Union
 
 
 class SimCLRViewTransform:

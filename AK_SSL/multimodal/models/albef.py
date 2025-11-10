@@ -5,11 +5,11 @@
  * For full license text, see LICENSE.txt file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 """
 
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from copy import deepcopy
 
 
 class ALBEF(nn.Module):

@@ -1,5 +1,6 @@
-import torch
 import copy
+
+import torch
 import torch.nn as nn
 
 from AK_SSL.vision.models.modules.heads import SwAVProjectionHead

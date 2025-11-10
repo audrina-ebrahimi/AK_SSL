@@ -1,11 +1,11 @@
-from typing import Optional, Union
 from random import randint
+from typing import Optional, Union
 
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
-from einops import rearrange
+import torch.nn.functional as F
 from axial_positional_embedding import AxialPositionalEmbedding
+from einops import rearrange
 
 from AK_SSL.multimodal.models.utils.simvlm.resblock import BottleneckBlock
 

@@ -1,8 +1,8 @@
 # https://github.com/YulongBonjour/SimVLM/blob/main/model/resblock.py
 
-from torch import nn
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 
 def c2_msra_fill(module: nn.Module) -> None:

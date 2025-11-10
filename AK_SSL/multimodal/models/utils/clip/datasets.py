@@ -1,8 +1,8 @@
-import torch
-import transformers
 from typing import Union
-import torchvision.transforms as transforms
 
+import torch
+import torchvision.transforms as transforms
+import transformers
 from PIL import Image
 
 
